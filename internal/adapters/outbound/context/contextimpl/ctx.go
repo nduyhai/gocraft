@@ -1,28 +1,30 @@
 package contextimpl
 
-import "github.com/nduyhai/go-clean-arch-starter/internal/core/ports"
+import "github.com/nduyhai/gocraft/internal/core/ports"
 
 // Ctx implements ports.Ctx and holds outbound collaborators and generation values.
 type Ctx struct {
-	projectRoot string
-	values      map[string]any
-	fs          ports.FSWriter
-	renderer    ports.Renderer
-	gomod       ports.GoModEditor
+	projectRoot    string
+	values         map[string]any
+	fs             ports.FSWriter
+	renderer       ports.Renderer
+	gomod          ports.GoModEditor
+	adaptersModule ports.AdaptersModuleEditor
 }
 
 // New constructs a new Ctx.
 // values may be nil; an internal map will be allocated.
-func New(projectRoot string, fs ports.FSWriter, renderer ports.Renderer, gomod ports.GoModEditor, values map[string]any) *Ctx {
+func New(projectRoot string, fs ports.FSWriter, renderer ports.Renderer, gomod ports.GoModEditor, adapters ports.AdaptersModuleEditor, values map[string]any) *Ctx {
 	if values == nil {
 		values = make(map[string]any)
 	}
 	return &Ctx{
-		projectRoot: projectRoot,
-		values:      values,
-		fs:          fs,
-		renderer:    renderer,
-		gomod:       gomod,
+		projectRoot:    projectRoot,
+		values:         values,
+		fs:             fs,
+		renderer:       renderer,
+		gomod:          gomod,
+		adaptersModule: adapters,
 	}
 }
 
@@ -43,3 +45,6 @@ func (c *Ctx) Renderer() ports.Renderer { return c.renderer }
 
 // GoMod returns the go.mod editor utility.
 func (c *Ctx) GoMod() ports.GoModEditor { return c.gomod }
+
+// AdaptersModule returns the adapters module file editor.
+func (c *Ctx) AdaptersModule() ports.AdaptersModuleEditor { return c.adaptersModule }

@@ -1,4 +1,4 @@
-module github.com/nduyhai/go-clean-arch-starter
+module github.com/nduyhai/gocraft
 
 go 1.24.1
 

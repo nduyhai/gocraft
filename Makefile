@@ -35,7 +35,7 @@ all: test goimports fmt build
 # Build the project
 build:
 	mkdir -p $(BUILD_DIR)
-	$(GOBUILD) -ldflags="-s -w -X github.com/nduyhai/go-clean-arch-starter/pkg/version.Version=$(VERSION)" -o $(BUILD_DIR)/$(BINARY_NAME) $(MAIN_PACKAGE)
+	$(GOBUILD) -ldflags="-s -w -X github.com/nduyhai/gocraft/pkg/version.Version=$(VERSION)" -o $(BUILD_DIR)/$(BINARY_NAME) $(MAIN_PACKAGE)
 
 # Run tests
 test:
@@ -82,7 +82,7 @@ run:
 
 # Install the binary into GOPATH/bin or GOBIN
 install:
-	$(GOCMD) install -ldflags="-s -w -X github.com/nduyhai/go-clean-arch-starter/pkg/version.Version=$(VERSION)" $(MAIN_PACKAGE)
+	$(GOCMD) install -ldflags="-s -w -X github.com/nduyhai/gocraft/pkg/version.Version=$(VERSION)" $(MAIN_PACKAGE)
 
 # Uninstall the binary from GOBIN or GOPATH/bin
 uninstall:

@@ -1,0 +1,50 @@
+package httpgin
+
+import (
+	"log/slog"
+	"time"
+
+	"github.com/gin-gonic/gin"
+	"github.com/google/uuid"
+)
+
+// requestID adds/propagates a request ID in X-Request-ID header.
+func requestID() gin.HandlerFunc {
+	return func(c *gin.Context) {
+		rid := c.Request.Header.Get("X-Request-ID")
+		if rid == "" {
+			rid = uuid.NewString()
+		}
+		c.Writer.Header().Set("X-Request-ID", rid)
+		c.Set("request_id", rid)
+		c.Next()
+	}
+}
+
+// requestLogger logs basic request info with latency and status.
+func requestLogger(log *slog.Logger) gin.HandlerFunc {
+	return func(c *gin.Context) {
+		start := time.Now()
+		c.Next()
+		lat := time.Since(start)
+		status := c.Writer.Status()
+		method := c.Request.Method
+		path := c.Request.URL.Path
+		rid, _ := c.Get("request_id")
+		log.Info("http request", "method", method, "path", path, "status", status, "latency", lat.String(), "rid", rid)
+	}
+}
+
+// corsAllowAll is a simple permissive CORS middleware for dev.
+func corsAllowAll() gin.HandlerFunc {
+	return func(c *gin.Context) {
+		c.Writer.Header().Set("Access-Control-Allow-Origin", "*")
+		c.Writer.Header().Set("Access-Control-Allow-Methods", "GET, POST, PUT, PATCH, DELETE, OPTIONS")
+		c.Writer.Header().Set("Access-Control-Allow-Headers", "Authorization, Content-Type, X-Requested-With, X-Request-ID")
+		if c.Request.Method == "OPTIONS" {
+			c.AbortWithStatus(204)
+			return
+		}
+		c.Next()
+	}
+}

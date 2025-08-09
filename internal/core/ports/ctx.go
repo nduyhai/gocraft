@@ -11,4 +11,5 @@ type Ctx interface {
 	Renderer() Renderer
 
 	GoMod() GoModEditor
+	AdaptersModule() AdaptersModuleEditor
 }
