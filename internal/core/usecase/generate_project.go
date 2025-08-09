@@ -27,7 +27,8 @@ func (uc GenerateProject) Execute(ctx context.Context, p entity.Project) error {
 	}
 	// Render
 	files, err := uc.Renderer.Render(tpl, map[string]any{
-		"Project": p,
+		"Name":   p.Name,
+		"Module": p.Module,
 	})
 	if err != nil {
 		return fmt.Errorf("render: %w", err)

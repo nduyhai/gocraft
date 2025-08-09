@@ -1,7 +1,15 @@
 package main
 
-import "fmt"
+import (
+	"go.uber.org/fx"
+
+	"{{ .Module }}/internal/platform/di"
+)
 
 func main() {
-	fmt.Println("{{ .Project.Name }} API running")
+	app := fx.New(
+		di.Root(), // loads env, logger, core, adapters, transports
+	)
+
+	app.Run()
 }

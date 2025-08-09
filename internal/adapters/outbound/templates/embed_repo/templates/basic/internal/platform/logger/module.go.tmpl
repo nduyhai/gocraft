@@ -1,0 +1,19 @@
+package logger
+
+import (
+	"log/slog"
+	"os"
+
+	"go.uber.org/fx"
+)
+
+func provideLogger() *slog.Logger {
+	lvl := new(slog.LevelVar)
+	lvl.Set(slog.LevelInfo)
+	return slog.New(slog.NewTextHandler(os.Stdout, &slog.HandlerOptions{Level: lvl}))
+}
+
+var Module = fx.Module(
+	"logger",
+	fx.Provide(provideLogger),
+)

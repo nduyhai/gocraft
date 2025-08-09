@@ -1,0 +1,51 @@
+package usecase
+
+import (
+	"context"
+	"errors"
+	"log/slog"
+	"time"
+
+	"{{ .Module }}/internal/core/entity"
+	"{{ .Module }}/internal/core/ports"
+)
+
+type UserService struct {
+	repo   ports.UserRepository
+	logger *slog.Logger
+}
+
+type NewUserServiceIn struct {
+	Repo   ports.UserRepository `name:"userrepo"`
+	Logger *slog.Logger
+}
+
+func NewUserService(in NewUserServiceIn) *UserService {
+	return &UserService{repo: in.Repo, logger: in.Logger}
+}
+
+func (s *UserService) Create(ctx context.Context, name, email string) (*entity.User, error) {
+	if name == "" || email == "" {
+		return nil, errors.New("name and email are required")
+	}
+	u := &entity.User{
+		ID:        time.Now().UTC().Format("20060102T150405.000000000"),
+		Name:      name,
+		Email:     email,
+		CreatedAt: time.Now().UTC(),
+		UpdatedAt: time.Now().UTC(),
+	}
+	if err := s.repo.Save(ctx, u); err != nil {
+		return nil, err
+	}
+	s.logger.Info("user.created", "id", u.ID, "email", u.Email)
+	return u, nil
+}
+
+func (s *UserService) Get(ctx context.Context, id string) (*entity.User, error) {
+	return s.repo.FindByID(ctx, id)
+}
+
+func (s *UserService) List(ctx context.Context, limit, offset int) ([]*entity.User, error) {
+	return s.repo.List(ctx, limit, offset)
+}

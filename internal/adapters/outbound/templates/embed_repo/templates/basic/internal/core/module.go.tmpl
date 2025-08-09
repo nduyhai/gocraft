@@ -1,0 +1,13 @@
+package core
+
+import (
+	"go.uber.org/fx"
+	"{{ .Module }}/internal/core/usecase"
+)
+
+var Module = fx.Module(
+	"core",
+	fx.Provide(
+		usecase.NewUserService, // depends on a UserRepository via name:"userrepo"
+	),
+)
