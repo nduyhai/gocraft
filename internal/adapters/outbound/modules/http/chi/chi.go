@@ -79,14 +79,16 @@ func (Module) Apply(ctx ports.Ctx) error {
 		return fmt.Errorf("write: %w", err)
 	}
 
-	// Edit the generated project's internal/adapters/module.go to append the Chi module via port.
+	// Update the generated project's DI root to append the Chi module via AdaptersModule editor.
 	if ed := ctx.AdaptersModule(); ed != nil {
 		vals := ctx.Values()
 		modPath, _ := vals["Module"].(string)
 		if modPath == "" {
 			return fmt.Errorf("module path missing in context")
 		}
-		_ = ed.Ensure("httpchi", modPath+"/internal/adapters/inbound/http/chi", "httpchi.Module()")
+		if err := ed.Ensure("httpchi", modPath+"/internal/adapters/inbound/http/chi", "httpchi.Module()"); err != nil {
+			return fmt.Errorf("update di root: %w", err)
+		}
 	}
 	return nil
 }

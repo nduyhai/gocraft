@@ -12,8 +12,8 @@ import (
 )
 
 // Editor implements ports.AdaptersModuleEditor by editing
-// <root>/internal/adapters/module.go and <root>/internal/platform/di/root.go
-// in-place using robust string operations. All operations are idempotent.
+// <root>/internal/platform/di/root.go in-place using robust string operations.
+// All operations are idempotent.
 
 type Editor struct{ root string }
 
@@ -23,21 +23,14 @@ func (e *Editor) Ensure(alias, importPath, optionExpr string) error {
 	if alias == "" || importPath == "" || optionExpr == "" {
 		return fmt.Errorf("invalid ensure args: alias/importPath/optionExpr must be non-empty")
 	}
-	// First, update internal/adapters/module.go if present.
-	if err := e.ensureInFile(
-		filepath.Join(e.root, "internal", "adapters", "module.go"),
-		"package adapters\n",
-		alias, importPath, optionExpr,
-	); err != nil {
-		return err
-	}
-	// Also update DI root: internal/platform/di/root.go if present.
-	_ = e.ensureInFile(
+	// Update DI root: internal/platform/di/root.go if present.
+	// Update DI root: internal/platform/di/root.go if present.
+	err := e.ensureInFile(
 		filepath.Join(e.root, "internal", "platform", "di", "root.go"),
 		"package di\n",
 		alias, importPath, optionExpr,
 	)
-	return nil
+	return err
 }
 
 // ensureInFile ensures an import alias/path and fx option expression exist in the given file.
@@ -102,34 +95,28 @@ func (e *Editor) ensureInFile(filePath, pkgLine, alias, importPath, optionExpr s
 		}
 	}
 
-	// Ensure fx.Option reference exists
+	// Ensure fx.Option reference exists by inserting before the closing ')' of return fx.Options(
 	if !strings.Contains(content, optionExpr) {
-		needle := "\t\tfx.Options(Extras...),"
-		if strings.Contains(content, needle) {
-			content = strings.Replace(content, needle, needle+"\n\t\t"+optionExpr+",", 1)
-		} else {
-			// Fallback: insert before the closing ')' of return fx.Options(
-			blockStart := strings.Index(content, "return fx.Options(")
-			if blockStart >= 0 {
-				s := content[blockStart:]
-				open := 0
-				idx := -1
-				for i, ch := range s {
-					if ch == '(' {
-						open++
-					}
-					if ch == ')' {
-						open--
-						if open == 0 {
-							idx = i
-							break
-						}
+		blockStart := strings.Index(content, "return fx.Options(")
+		if blockStart >= 0 {
+			s := content[blockStart:]
+			open := 0
+			idx := -1
+			for i, ch := range s {
+				if ch == '(' {
+					open++
+				}
+				if ch == ')' {
+					open--
+					if open == 0 {
+						idx = i
+						break
 					}
 				}
-				if idx > 0 {
-					insertAt := blockStart + idx
-					content = content[:insertAt] + "\n\t\t" + optionExpr + "," + content[insertAt:]
-				}
+			}
+			if idx > 0 {
+				insertAt := blockStart + idx
+				content = content[:insertAt] + "\n\t\t" + optionExpr + "," + content[insertAt:]
 			}
 		}
 	}
