@@ -12,8 +12,8 @@ import (
 )
 
 // Editor implements ports.AdaptersModuleEditor by editing
-// <root>/internal/adapters/module.go in-place using robust string operations.
-// All operations are idempotent.
+// <root>/internal/adapters/module.go and <root>/internal/platform/di/root.go
+// in-place using robust string operations. All operations are idempotent.
 
 type Editor struct{ root string }
 
@@ -23,10 +23,30 @@ func (e *Editor) Ensure(alias, importPath, optionExpr string) error {
 	if alias == "" || importPath == "" || optionExpr == "" {
 		return fmt.Errorf("invalid ensure args: alias/importPath/optionExpr must be non-empty")
 	}
-	modFile := filepath.Join(e.root, "internal", "adapters", "module.go")
-	b, err := os.ReadFile(modFile)
+	// First, update internal/adapters/module.go if present.
+	if err := e.ensureInFile(
+		filepath.Join(e.root, "internal", "adapters", "module.go"),
+		"package adapters\n",
+		alias, importPath, optionExpr,
+	); err != nil {
+		return err
+	}
+	// Also update DI root: internal/platform/di/root.go if present.
+	_ = e.ensureInFile(
+		filepath.Join(e.root, "internal", "platform", "di", "root.go"),
+		"package di\n",
+		alias, importPath, optionExpr,
+	)
+	return nil
+}
+
+// ensureInFile ensures an import alias/path and fx option expression exist in the given file.
+// pkgLine is the exact "package <name>\n" line used as a fallback anchor when no import block exists.
+func (e *Editor) ensureInFile(filePath, pkgLine, alias, importPath, optionExpr string) error {
+	b, err := os.ReadFile(filePath)
 	if err != nil {
-		return fmt.Errorf("read adapters/module.go: %w", err)
+		// If the file doesn't exist, do nothing (idempotent behavior for varying templates).
+		return nil
 	}
 	content := string(b)
 
@@ -78,7 +98,7 @@ func (e *Editor) Ensure(alias, importPath, optionExpr string) error {
 			content = buf.String()
 		} else {
 			// no import block; add after package line
-			content = strings.Replace(content, "package adapters\n", "package adapters\n\nimport (\n"+importLine+"\n)\n\n", 1)
+			content = strings.Replace(content, pkgLine, pkgLine+"\nimport (\n"+importLine+"\n)\n\n", 1)
 		}
 	}
 
@@ -114,7 +134,7 @@ func (e *Editor) Ensure(alias, importPath, optionExpr string) error {
 		}
 	}
 
-	return os.WriteFile(modFile, []byte(content), 0o644)
+	return os.WriteFile(filePath, []byte(content), 0o644)
 }
 
 var _ ports.AdaptersModuleEditor = (*Editor)(nil)

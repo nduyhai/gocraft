@@ -15,6 +15,10 @@ go install github.com/nduyhai/gocraft/cmd/gocraft@latest
 
 ```bash
 gocraft new myapp -m github.com/you/myapp
+
+gocraft new myapp -m github.com/you/myapp --with http:gin --with feature:makefile --with feature:gitignore --with feature:dockerfile
+
+gocraft new myapp -m github.com/you/myapp --with http:chi --with feature:makefile --with feature:gitignore --with feature:dockerfile
 ```
 
 This generates:

@@ -4,6 +4,7 @@ import (
 	dockerfilemodule "github.com/nduyhai/gocraft/internal/adapters/outbound/modules/feature/dockerfile"
 	gitignoremodule "github.com/nduyhai/gocraft/internal/adapters/outbound/modules/feature/gitignore"
 	"github.com/nduyhai/gocraft/internal/adapters/outbound/modules/feature/makefile"
+	chimodule "github.com/nduyhai/gocraft/internal/adapters/outbound/modules/http/chi"
 	ginmodule "github.com/nduyhai/gocraft/internal/adapters/outbound/modules/http/gin"
 	"github.com/nduyhai/gocraft/internal/adapters/outbound/modules/platform/base"
 	"github.com/nduyhai/gocraft/internal/core/ports"
@@ -18,8 +19,9 @@ import (
 func Builtins(r ports.Registry) {
 	// Platform base module (Fx + Viper, logger, DI root, basic structure)
 	r.Register(base.New())
-	// HTTP Gin server module
+	// HTTP server modules
 	r.Register(ginmodule.New())
+	r.Register(chimodule.New())
 	// Feature modules
 	r.Register(gitignoremodule.New())
 	r.Register(makefile.New())

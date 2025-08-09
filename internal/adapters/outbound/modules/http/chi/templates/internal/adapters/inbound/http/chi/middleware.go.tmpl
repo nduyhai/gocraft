@@ -1,0 +1,90 @@
+package httpchi
+
+import (
+	"context"
+	"log/slog"
+	"net/http"
+	"time"
+
+	"github.com/google/uuid"
+)
+
+// ctxKey is a private type for context keys in this package
+// to avoid collisions.
+type ctxKey string
+
+const (
+	ctxKeyRequestID ctxKey = "request_id"
+)
+
+// statusRecorder wraps http.ResponseWriter to record status code and bytes written.
+type statusRecorder struct {
+	http.ResponseWriter
+	status int
+	size   int
+}
+
+func (w *statusRecorder) WriteHeader(code int) {
+	w.status = code
+	w.ResponseWriter.WriteHeader(code)
+}
+
+func (w *statusRecorder) Write(b []byte) (int, error) {
+	if w.status == 0 {
+		w.status = http.StatusOK
+	}
+	n, err := w.ResponseWriter.Write(b)
+	w.size += n
+	return n, err
+}
+
+// requestID adds/propagates a request ID in X-Request-ID header.
+func requestID() func(http.Handler) http.Handler {
+	return func(next http.Handler) http.Handler {
+		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+			rid := r.Header.Get("X-Request-ID")
+			if rid == "" {
+				rid = uuid.NewString()
+			}
+			w.Header().Set("X-Request-ID", rid)
+			r = r.WithContext(context.WithValue(r.Context(), ctxKeyRequestID, rid))
+			next.ServeHTTP(w, r)
+		})
+	}
+}
+
+// requestLogger logs basic request info with latency and status.
+func requestLogger(log *slog.Logger) func(http.Handler) http.Handler {
+	return func(next http.Handler) http.Handler {
+		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+			start := time.Now()
+			rec := &statusRecorder{ResponseWriter: w}
+			next.ServeHTTP(rec, r)
+			lat := time.Since(start)
+			status := rec.status
+			method := r.Method
+			path := r.URL.Path
+			var rid any
+			if v := r.Context().Value(ctxKeyRequestID); v != nil {
+				rid = v
+			}
+			log.Info("http request", "method", method, "path", path, "status", status, "latency", lat.String(), "rid", rid)
+		})
+	}
+}
+
+// corsAllowAll is a simple permissive CORS middleware for dev.
+func corsAllowAll() func(http.Handler) http.Handler {
+	return func(next http.Handler) http.Handler {
+		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+			w.Header().Set("Access-Control-Allow-Origin", "*")
+			w.Header().Set("Access-Control-Allow-Methods", "GET, POST, PUT, PATCH, DELETE, OPTIONS")
+			w.Header().Set("Access-Control-Allow-Headers", "Authorization, Content-Type, X-Requested-With, X-Request-ID")
+			if r.Method == http.MethodOptions {
+				w.WriteHeader(http.StatusNoContent)
+				return
+			}
+			next.ServeHTTP(w, r)
+		})
+	}
+}
