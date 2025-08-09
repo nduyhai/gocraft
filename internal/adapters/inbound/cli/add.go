@@ -11,8 +11,9 @@ import (
 	contextimpl "github.com/nduyhai/go-clean-arch-starter/internal/adapters/outbound/context/contextimpl"
 	"github.com/nduyhai/go-clean-arch-starter/internal/adapters/outbound/fs/oswriter"
 	"github.com/nduyhai/go-clean-arch-starter/internal/adapters/outbound/modules/register"
-	regsimple "github.com/nduyhai/go-clean-arch-starter/internal/adapters/outbound/registry/simple"
+	regsimple "github.com/nduyhai/go-clean-arch-starter/internal/adapters/outbound/registry/embed_registry"
 	"github.com/nduyhai/go-clean-arch-starter/internal/adapters/outbound/rendering/texttmpl"
+	"github.com/nduyhai/go-clean-arch-starter/internal/core/usecase"
 	"github.com/spf13/cobra"
 )
 
@@ -50,7 +51,9 @@ func newAddCmd() *cobra.Command {
 			r := regsimple.New()
 			register.Builtins(r)
 
-			if err := r.Apply(ctx, args...); err != nil {
+			// Use usecase to apply modules
+			uc := usecase.ApplyModules{Registry: r}
+			if err := uc.Execute(ctx, args...); err != nil {
 				return err
 			}
 			_, _ = fmt.Fprintf(cmd.OutOrStdout(), "Applied modules: %s\n", strings.Join(args, ", "))

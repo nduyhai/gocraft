@@ -8,7 +8,7 @@ import (
 // Builtins registers all built-in modules into the provided registry.
 // Usage:
 //
-//	r := simple.New()
+//	r := embed_registry.New()
 //	register.Builtins(r)
 //	// r now contains platform:base and others when added in future
 func Builtins(r ports.Registry) {

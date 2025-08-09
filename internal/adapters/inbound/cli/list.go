@@ -6,7 +6,8 @@ import (
 	"strings"
 
 	"github.com/nduyhai/go-clean-arch-starter/internal/adapters/outbound/modules/register"
-	regsimple "github.com/nduyhai/go-clean-arch-starter/internal/adapters/outbound/registry/simple"
+	regsimple "github.com/nduyhai/go-clean-arch-starter/internal/adapters/outbound/registry/embed_registry"
+	"github.com/nduyhai/go-clean-arch-starter/internal/core/usecase"
 	"github.com/spf13/cobra"
 )
 
@@ -19,7 +20,9 @@ func newListCmd() *cobra.Command {
 			r := regsimple.New()
 			register.Builtins(r)
 
-			mods := r.List()
+			// Use usecase to list modules
+			uc := usecase.ListModules{Registry: r}
+			mods := uc.Execute()
 			if len(mods) == 0 {
 				_, _ = fmt.Fprintln(cmd.OutOrStdout(), "No modules available")
 				return nil
@@ -28,7 +31,7 @@ func newListCmd() *cobra.Command {
 			// Sort by Name for stable output (registry already preserves order, but sort for clarity)
 			sort.Slice(mods, func(i, j int) bool { return mods[i].Name() < mods[j].Name() })
 
-			// Print a simple table-like output
+			// Print a embed_registry table-like output
 			_, _ = fmt.Fprintln(cmd.OutOrStdout(), "NAME\tVERSION\tLABEL\tTAGS\tSUMMARY")
 			for _, m := range mods {
 				name := m.Name()
