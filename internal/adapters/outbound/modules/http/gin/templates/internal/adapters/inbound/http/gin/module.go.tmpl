@@ -11,12 +11,11 @@ import (
 	"github.com/prometheus/client_golang/prometheus/promhttp"
 	"github.com/spf13/viper"
 	"go.uber.org/fx"
-	"{{ .Module }}/internal/adapters"
 )
 
 // httpConfig holds minimal server configuration.
 type httpConfig struct {
-	Addr string ` + "`" + `mapstructure:"server.http.addr"` + "`" + `
+	Addr string `mapstructure:"server.http.addr"`
 }
 
 func loadHTTPConfig() *httpConfig {
@@ -89,7 +88,3 @@ func Module() fx.Option {
 	)
 }
 
-func init() {
-	// Register into base adapters module without file overwrite
-	adapters.Register(Module())
-}
