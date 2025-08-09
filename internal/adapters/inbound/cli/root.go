@@ -1,7 +1,6 @@
 package cli
 
 import (
-	"fmt"
 	"os"
 
 	"github.com/nduyhai/go-clean-arch-starter/pkg/version"
@@ -31,11 +30,4 @@ func NewRootCmd() *cobra.Command {
 	cmd.SetErr(os.Stderr)
 
 	return cmd
-}
-
-func printAvailableTemplates(out *os.File, names []string) {
-	fmt.Fprintln(out, "Available templates:")
-	for _, n := range names {
-		fmt.Fprintf(out, "  - %s\n", n)
-	}
 }

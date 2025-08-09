@@ -51,7 +51,7 @@ func newNewCmd() *cobra.Command {
 			if err := uc.Execute(context.Background(), p); err != nil {
 				return err
 			}
-			fmt.Fprintf(cmd.OutOrStdout(), "Project generated at %s\n", target)
+			_, _ = fmt.Fprintf(cmd.OutOrStdout(), "Project generated at %s\n", target)
 			return nil
 		},
 	}
