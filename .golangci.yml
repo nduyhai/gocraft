@@ -3,7 +3,7 @@ run:
   timeout: 5m
   tests: true
   concurrency: 4
-  fix: true  # Auto-fix simple issues like gofmt, goimports when possible
+  fix: true  # Auto-fix embed_registry issues like gofmt, goimports when possible
 
 sort-results: true
 

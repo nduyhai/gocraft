@@ -1,4 +1,4 @@
-package simple
+package embed_registry
 
 import (
 	"fmt"
@@ -7,7 +7,7 @@ import (
 	"github.com/nduyhai/go-clean-arch-starter/internal/core/ports"
 )
 
-// Registry is an in-memory module registry with a simple planner.
+// Registry is an in-memory module registry with a embed_registry planner.
 // It keeps deterministic registration order for List(), while Apply() resolves
 // transitive Requires(), detects Conflicts() and cycles, and applies modules
 // in a valid topological order.
