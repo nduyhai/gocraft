@@ -3,7 +3,7 @@ package cli
 import (
 	"os"
 
-	"github.com/nduyhai/go-clean-arch-starter/pkg/version"
+	"github.com/nduyhai/gocraft/pkg/version"
 	"github.com/spf13/cobra"
 )
 

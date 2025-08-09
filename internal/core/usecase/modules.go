@@ -1,7 +1,7 @@
 package usecase
 
 import (
-	"github.com/nduyhai/go-clean-arch-starter/internal/core/ports"
+	"github.com/nduyhai/gocraft/internal/core/ports"
 )
 
 // ApplyModules orchestrates applying one or more modules to a given context.

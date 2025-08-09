@@ -5,7 +5,7 @@ import (
 	"io/fs"
 	"strings"
 
-	"github.com/nduyhai/go-clean-arch-starter/internal/core/ports"
+	"github.com/nduyhai/gocraft/internal/core/ports"
 )
 
 // Module implements ports.Module for the base platform.

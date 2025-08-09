@@ -1,9 +1,9 @@
 package register
 
 import (
-	ginmodule "github.com/nduyhai/go-clean-arch-starter/internal/adapters/outbound/modules/http/gin"
-	"github.com/nduyhai/go-clean-arch-starter/internal/adapters/outbound/modules/platform/base"
-	"github.com/nduyhai/go-clean-arch-starter/internal/core/ports"
+	ginmodule "github.com/nduyhai/gocraft/internal/adapters/outbound/modules/http/gin"
+	"github.com/nduyhai/gocraft/internal/adapters/outbound/modules/platform/base"
+	"github.com/nduyhai/gocraft/internal/core/ports"
 )
 
 // Builtins registers all built-in modules into the provided registry.

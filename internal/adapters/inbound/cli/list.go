@@ -5,9 +5,9 @@ import (
 	"sort"
 	"strings"
 
-	"github.com/nduyhai/go-clean-arch-starter/internal/adapters/outbound/modules/register"
-	"github.com/nduyhai/go-clean-arch-starter/internal/adapters/outbound/registry/embed_registry"
-	"github.com/nduyhai/go-clean-arch-starter/internal/core/usecase"
+	"github.com/nduyhai/gocraft/internal/adapters/outbound/modules/register"
+	"github.com/nduyhai/gocraft/internal/adapters/outbound/registry/embed_registry"
+	"github.com/nduyhai/gocraft/internal/core/usecase"
 	"github.com/spf13/cobra"
 )
 

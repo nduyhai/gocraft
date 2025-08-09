@@ -5,9 +5,9 @@ import (
 	"io/fs"
 	"strings"
 
-	ginmodule "github.com/nduyhai/go-clean-arch-starter/internal/adapters/outbound/modules/http/gin"
-	base "github.com/nduyhai/go-clean-arch-starter/internal/adapters/outbound/modules/platform/base"
-	"github.com/nduyhai/go-clean-arch-starter/internal/core/ports"
+	ginmodule "github.com/nduyhai/gocraft/internal/adapters/outbound/modules/http/gin"
+	base "github.com/nduyhai/gocraft/internal/adapters/outbound/modules/platform/base"
+	"github.com/nduyhai/gocraft/internal/core/ports"
 )
 
 // New returns an embedded template repository with available templates.

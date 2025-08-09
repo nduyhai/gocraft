@@ -6,8 +6,8 @@ import (
 	"strings"
 	"text/template"
 
-	"github.com/nduyhai/go-clean-arch-starter/internal/core/entity"
-	"github.com/nduyhai/go-clean-arch-starter/internal/core/ports"
+	"github.com/nduyhai/gocraft/internal/core/entity"
+	"github.com/nduyhai/gocraft/internal/core/ports"
 )
 
 type Renderer struct{}

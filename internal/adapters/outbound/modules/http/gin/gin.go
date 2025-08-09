@@ -5,7 +5,7 @@ import (
 	"io/fs"
 	"strings"
 
-	"github.com/nduyhai/go-clean-arch-starter/internal/core/ports"
+	"github.com/nduyhai/gocraft/internal/core/ports"
 )
 
 // Module implements ports.Module for adding a Gin HTTP server into an existing or new project.
@@ -16,7 +16,6 @@ import (
 //
 // This module adds:
 // - internal/adapters/http/gin/ (server wiring, middlewares)
-// - Self-registration into adapters.Register(...) so no file overwrite is needed
 // - Default routes: /healthz and /metrics
 // - Middlewares: recovery, request ID, simple logging, permissive CORS
 // - Minimal config via Viper with default addr ":8080" and PORT env override
@@ -39,6 +38,14 @@ func (Module) Conflicts() []string { return nil }
 func (Module) Applies(ctx ports.Ctx) bool { return true }
 
 func (Module) Apply(ctx ports.Ctx) error {
+	// Try to add required dependencies if a GoMod editor is available
+	if gm := ctx.GoMod(); gm != nil {
+		_ = gm.Add("github.com/gin-gonic/gin", "v1.10.0")
+		_ = gm.Add("github.com/google/uuid", "v1.6.0")
+		_ = gm.Add("github.com/prometheus/client_golang", "v1.19.1")
+		_ = gm.Add("github.com/spf13/viper", "v1.20.1")
+		_ = gm.Add("go.uber.org/fx", "v1.24.0")
+	}
 	// Build template from embedded TemplatesFS
 	sub, err := fs.Sub(TemplatesFS, "templates")
 	if err != nil {
@@ -70,6 +77,16 @@ func (Module) Apply(ctx ports.Ctx) error {
 	}
 	if err := ctx.FS().WriteAll(ctx.ProjectRoot(), files); err != nil {
 		return fmt.Errorf("write: %w", err)
+	}
+
+	// Edit the generated project's internal/adapters/module.go to append the Gin module via port.
+	if ed := ctx.AdaptersModule(); ed != nil {
+		vals := ctx.Values()
+		modPath, _ := vals["Module"].(string)
+		if modPath == "" {
+			return fmt.Errorf("module path missing in context")
+		}
+		_ = ed.Ensure("httpgin", modPath+"/internal/adapters/inbound/http/gin", "httpgin.Module()")
 	}
 	return nil
 }

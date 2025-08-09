@@ -8,7 +8,7 @@ A CLI to generate Go projects with a clean architecture layout from embedded tem
 ## Install
 
 ```bash
-go install github.com/nduyhai/go-clean-arch-starter/cmd/gocraft@latest
+go install github.com/nduyhai/gocraft/cmd/gocraft@latest
 ```
 
 ## Usage

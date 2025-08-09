@@ -8,12 +8,14 @@ import (
 	"path/filepath"
 	"strings"
 
-	"github.com/nduyhai/go-clean-arch-starter/internal/adapters/outbound/context/contextimpl"
-	"github.com/nduyhai/go-clean-arch-starter/internal/adapters/outbound/fs/oswriter"
-	"github.com/nduyhai/go-clean-arch-starter/internal/adapters/outbound/modules/register"
-	"github.com/nduyhai/go-clean-arch-starter/internal/adapters/outbound/registry/embed_registry"
-	"github.com/nduyhai/go-clean-arch-starter/internal/adapters/outbound/rendering/texttmpl"
-	"github.com/nduyhai/go-clean-arch-starter/internal/core/usecase"
+	"github.com/nduyhai/gocraft/internal/adapters/outbound/context/contextimpl"
+	amfileeditor "github.com/nduyhai/gocraft/internal/adapters/outbound/editors/adaptersmodule/fileeditor"
+	"github.com/nduyhai/gocraft/internal/adapters/outbound/fs/oswriter"
+	gomodfileeditor "github.com/nduyhai/gocraft/internal/adapters/outbound/gomod/fileeditor"
+	"github.com/nduyhai/gocraft/internal/adapters/outbound/modules/register"
+	"github.com/nduyhai/gocraft/internal/adapters/outbound/registry/embed_registry"
+	"github.com/nduyhai/gocraft/internal/adapters/outbound/rendering/texttmpl"
+	"github.com/nduyhai/gocraft/internal/core/usecase"
 	"github.com/spf13/cobra"
 )
 
@@ -40,9 +42,11 @@ func newAddCmd() *cobra.Command {
 			// Outbound collaborators
 			renderer := texttmpl.New()
 			writer := oswriter.New()
+			gomod := gomodfileeditor.New(cwd)
+			adaptersEditor := amfileeditor.New(cwd)
 
 			// Build context
-			ctx := contextimpl.New(cwd, writer, renderer, nil, map[string]any{
+			ctx := contextimpl.New(cwd, writer, renderer, gomod, adaptersEditor, map[string]any{
 				"Name":   name,
 				"Module": modulePath,
 			})

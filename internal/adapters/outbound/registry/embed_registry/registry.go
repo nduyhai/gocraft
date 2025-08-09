@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"sort"
 
-	"github.com/nduyhai/go-clean-arch-starter/internal/core/ports"
+	"github.com/nduyhai/gocraft/internal/core/ports"
 )
 
 // Registry is an in-memory module registry with a embed_registry planner.

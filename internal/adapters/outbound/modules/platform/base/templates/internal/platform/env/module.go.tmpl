@@ -1,12 +1,22 @@
 package env
 
 import (
-	"fmt"
+	"os"
 	"strings"
 
 	"github.com/spf13/viper"
 	"go.uber.org/fx"
 )
+
+// Config holds application configuration loaded via Viper.
+// Extend as needed in projects and other modules can read from it.
+//
+// Example corresponds to templates/config/config.yml.tmpl
+// logger:
+//   level: info
+// server:
+//   http:
+//     addr: ":8080"
 
 type Config struct {
 	Logger struct {
@@ -14,26 +24,24 @@ type Config struct {
 	} `mapstructure:"logger"`
 }
 
+// Module provides *Config via Fx and sets up Viper to read config files and env.
 func Module() fx.Option {
-	return fx.Provide(
-		func() (*Config, error) {
-			v := viper.New()
-			v.SetConfigName("config")
-			v.SetConfigType("yaml")
-			v.AddConfigPath("config")
-			v.AutomaticEnv()
-			v.SetEnvKeyReplacer(strings.NewReplacer(".", "_"))
-
-			if err := v.ReadInConfig(); err != nil {
-				return nil, fmt.Errorf("read config: %w", err)
-			}
-
-			var cfg Config
-			if err := v.Unmarshal(&cfg); err != nil {
-				return nil, fmt.Errorf("unmarshal config: %w", err)
-			}
-
-			return &cfg, nil
-		},
-	)
+	return fx.Provide(func() *Config {
+		v := viper.New()
+		v.SetConfigName("config")
+		v.SetConfigType("yaml")
+		v.AddConfigPath("config")
+		_ = v.ReadInConfig()
+		// ENV overrides: APP_FOO_BAR => foo.bar
+		v.SetEnvPrefix("")
+		v.SetEnvKeyReplacer(strings.NewReplacer(".", "_"))
+		v.AutomaticEnv()
+		// Common convenience: PORT overrides server.http.addr
+		if p := os.Getenv("PORT"); p != "" {
+			v.Set("server.http.addr", ":"+p)
+		}
+		var cfg Config
+		_ = v.Unmarshal(&cfg)
+		return &cfg
+	})
 }
