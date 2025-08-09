@@ -14,20 +14,21 @@ GOIMPORTS=goimports
 VERSION ?= $(shell git describe --tags --always --dirty 2>/dev/null || echo dev)
 
 # Binary name
-BINARY_NAME=cleanctl
+BINARY_NAME=gocraft
 
-## Docker
-DOCKER_IMAGE_NAME=$(BINARY_NAME)-app
-DOCKER_IMAGE_TAG=latest
-DOCKERFILE=Dockerfile
+# Where go install places binaries
+GOBIN_DIR := $(shell go env GOBIN)
+GOPATH_BIN := $(shell go env GOPATH)/bin
+INSTALL_DIR := $(if $(GOBIN_DIR),$(GOBIN_DIR),$(GOPATH_BIN))
+
 
 # Build directory
 BUILD_DIR=build
 
 # Main package path
-MAIN_PACKAGE=./cmd/cleanctl
+MAIN_PACKAGE=./cmd/gocraft
 
-.PHONY: all build install run test test-coverage clean lint deps verify help goimports docker-build docker-buildx docker-run docker-clean
+.PHONY: all build install uninstall run test test-coverage clean lint deps verify help goimports
 
 all: test goimports fmt build
 
@@ -73,30 +74,9 @@ goimports:
 verify:
 	$(GOMOD) verify
 
-# Build Docker image
-docker-build:
-	@echo "Building Docker image with APP_NAME=$(BINARY_NAME)..."
-	docker build --build-arg APP_NAME=$(BINARY_NAME) -t $(DOCKER_IMAGE_NAME):$(DOCKER_IMAGE_TAG) -f $(DOCKERFILE) .
 
-docker-buildx:
-	@echo "Building multi-arch Docker image with APP_NAME=$(BINARY_NAME)..."
-	docker buildx build \
-		--platform linux/amd64,linux/arm64 \
-		--build-arg APP_NAME=$(BINARY_NAME) \
-		-t $(DOCKER_IMAGE_NAME):$(DOCKER_IMAGE_TAG) \
-		-f $(DOCKERFILE) \
-		--load \
-		.
 
-# Run Docker container
-docker-run:
-	@echo "Running Docker container..."
-	docker run --rm -p 8080:8080 $(DOCKER_IMAGE_NAME):$(DOCKER_IMAGE_TAG)
 
-# Remove Docker image
-docker-clean:
-	@echo "Removing Docker image..."
-	docker rmi $(DOCKER_IMAGE_NAME):$(DOCKER_IMAGE_TAG) || true
 run:
 	$(GOCMD) run $(MAIN_PACKAGE)
 
@@ -104,13 +84,20 @@ run:
 install:
 	$(GOCMD) install -ldflags="-s -w -X github.com/nduyhai/go-clean-arch-starter/pkg/version.Version=$(VERSION)" $(MAIN_PACKAGE)
 
+# Uninstall the binary from GOBIN or GOPATH/bin
+uninstall:
+	@if [ -z "$(INSTALL_DIR)" ]; then echo "Cannot determine install dir"; exit 1; fi
+	@echo "Removing $(INSTALL_DIR)/$(BINARY_NAME)"
+	@rm -f "$(INSTALL_DIR)/$(BINARY_NAME)"
+
 # Show help
 help:
 	@echo "Make targets:"
 	@echo "  all            - Run tests and build"
-	@echo "  build          - Build the cleanctl binary"
-	@echo "  install        - Install the cleanctl binary to GOBIN/GOPATH/bin"
-	@echo "  run            - Run the cleanctl CLI"
+	@echo "  build          - Build the gocraft binary"
+	@echo "  install        - Install the gocraft binary to GOBIN/GOPATH/bin"
+	@echo "  uninstall      - Remove the installed gocraft binary from GOBIN/GOPATH/bin"
+	@echo "  run            - Run the gocraft CLI"
 	@echo "  test           - Run tests"
 	@echo "  test-coverage  - Run tests with coverage report"
 	@echo "  clean          - Clean build artifacts"
@@ -119,8 +106,4 @@ help:
 	@echo "  fmt            - Format code"
 	@echo "  goimports      - Run goimports to format code and update imports"
 	@echo "  verify         - Verify dependencies"
-	@echo "  docker-build   - Build the Docker image"
-	@echo "  docker-buildx  - Build the multi-arch Docker image"
-	@echo "  docker-run     - Run the Docker container"
-	@echo "  docker-clean   - Remove the Docker image"
 	@echo "  help           - Show this help"

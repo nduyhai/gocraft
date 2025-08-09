@@ -9,9 +9,9 @@ import (
 
 func NewRootCmd() *cobra.Command {
 	cmd := &cobra.Command{
-		Use:   "cleanctl",
+		Use:   "gocraft",
 		Short: "Project generator following clean architecture",
-		Long:  "cleanctl generates a Go project from embedded templates using a clean architecture.",
+		Long:  "gocraft generates a Go project from embedded templates using a clean architecture.",
 		RunE: func(cmd *cobra.Command, args []string) error {
 			return cmd.Help()
 		},
