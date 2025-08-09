@@ -1,4 +1,4 @@
-package makefile
+package dockerfile
 
 import (
 	"fmt"
@@ -8,25 +8,26 @@ import (
 	"github.com/nduyhai/gocraft/internal/core/ports"
 )
 
-// Module implements ports.Module for adding a Makefile to the project.
+// Module implements ports.Module for adding a Dockerfile to the project root.
 //
-// Name:      feature:makefile
-// Requires:  platform:base (so the base project exists and paths are consistent)
+// Name:      feature:dockerfile
+// Requires:  platform:base (ensure base project layout exists)
 // Conflicts: none
 //
-// This module writes a Makefile at the project root from an embedded template.
-// The template is conservative and idempotent in that it will overwrite the
-// existing Makefile if present; future enhancement could add merge/skip logic.
+// This module writes a Dockerfile at the project root from an embedded template.
+// It is idempotent with respect to file generation (will overwrite if exists).
 
 type Module struct{}
 
 func New() Module { return Module{} }
 
-func (Module) Name() string    { return "feature:makefile" }
-func (Module) Label() string   { return "Makefile (common dev tasks)" }
+func (Module) Name() string    { return "feature:dockerfile" }
+func (Module) Label() string   { return "Dockerfile (multi-stage for Go)" }
 func (Module) Version() string { return "0.1.0" }
-func (Module) Summary() string { return "Adds a Makefile with common targets (build, test, lint, run)" }
-func (Module) Tags() []string  { return []string{"feature", "makefile", "devtools"} }
+func (Module) Summary() string {
+	return "Adds a multi-stage Dockerfile for building and running the service"
+}
+func (Module) Tags() []string { return []string{"feature", "docker", "container"} }
 
 func (Module) Requires() []string  { return []string{"platform:base"} }
 func (Module) Conflicts() []string { return nil }
@@ -58,7 +59,7 @@ func (Module) Apply(ctx ports.Ctx) error {
 	if err != nil {
 		return fmt.Errorf("walk: %w", err)
 	}
-	tpl := ports.Template{Name: "feature:makefile", Files: tfiles}
+	tpl := ports.Template{Name: "feature:dockerfile", Files: tfiles}
 	files, err := ctx.Renderer().Render(tpl, ctx.Values())
 	if err != nil {
 		return fmt.Errorf("render: %w", err)

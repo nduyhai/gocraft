@@ -1,8 +1,8 @@
 package register
 
 import (
-	gitignored "github.com/nduyhai/gocraft/internal/adapters/outbound/modules/feature/gitignore"
-	makefile "github.com/nduyhai/gocraft/internal/adapters/outbound/modules/feature/makefile"
+	dockerfilemodule "github.com/nduyhai/gocraft/internal/adapters/outbound/modules/feature/dockerfile"
+	gitignoremodule "github.com/nduyhai/gocraft/internal/adapters/outbound/modules/feature/gitignore"
 	ginmodule "github.com/nduyhai/gocraft/internal/adapters/outbound/modules/http/gin"
 	"github.com/nduyhai/gocraft/internal/adapters/outbound/modules/platform/base"
 	"github.com/nduyhai/gocraft/internal/core/ports"
@@ -19,8 +19,7 @@ func Builtins(r ports.Registry) {
 	r.Register(base.New())
 	// HTTP Gin server module
 	r.Register(ginmodule.New())
-	// Makefile feature module
-	r.Register(makefile.New())
-	// .gitignore feature module
-	r.Register(gitignored.New())
+	// Feature modules
+	r.Register(gitignoremodule.New())
+	r.Register(dockerfilemodule.New())
 }

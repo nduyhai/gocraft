@@ -75,7 +75,15 @@ See internal directory for core, adapters, and platform layers. Templates are em
 
 ## Module
 
-### Core
+### Currently Supported Modules
+- platform:base — Base clean-arch project (Fx DI, Viper config, logger scaffold, DI root).
+- http:gin — HTTP server via Gin with common middlewares and basic routes.
+- feature:gitignore — Adds a .gitignore suited for Go projects.
+- feature:dockerfile — Adds a multi-stage Dockerfile for building and running the service.
+
+### Planned/Future Modules
+
+#### Core
 | Module Name              | Purpose                                 | Requires        | Conflicts |
 | ------------------------ | --------------------------------------- | --------------- | --------- |
 | `platform:base`          | Fx + Viper config, logger, DI root      | –               | –         |
@@ -84,7 +92,7 @@ See internal directory for core, adapters, and platform layers. Templates are em
 | `platform:observability` | OpenTelemetry tracing, metrics, pprof   | `platform:base` | –         |
 
 
-### Transports
+#### Transports
 
 | Module Name   | Purpose                                 | Requires        | Conflicts               |
 | ------------- | --------------------------------------- | --------------- | ----------------------- |
@@ -95,7 +103,7 @@ See internal directory for core, adapters, and platform layers. Templates are em
 | `rest:client` | HTTP client with retry, circuit breaker | `platform:base` | –                       |
 
 
-### Database
+#### Database
 
 | Module Name    | Purpose                           | Requires        | Conflicts                 |
 | -------------- | --------------------------------- | --------------- | ------------------------- |
@@ -106,7 +114,7 @@ See internal directory for core, adapters, and platform layers. Templates are em
 | `db:migration` | Goose or Atlas migrations         | `platform:base` | –                         |
 
 
-### Caching, Queue
+#### Caching, Queue
 
 | Module Name      | Purpose                    | Requires        | Conflicts |
 | ---------------- | -------------------------- | --------------- | --------- |
@@ -116,12 +124,14 @@ See internal directory for core, adapters, and platform layers. Templates are em
 | `pubsub:nats`    | NATS JetStream setup       | `platform:base` | –         |
 
 
-### Utilities
+#### Utilities
 
-| Module Name       | Purpose                          | Requires                 | Conflicts |
-| ----------------- | -------------------------------- | ------------------------ | --------- |
-| `feature:i18n`    | i18n JSON file loader            | `platform:base`          | –         |
-| `feature:auth`    | JWT auth middleware              | `http:gin` or `http:chi` | –         |
-| `feature:health`  | `/health` and `/ready` endpoints | `http:*`                 | –         |
-| `feature:metrics` | Prometheus metrics endpoint      | `http:*`                 | –         |
-| `feature:swagger` | Swagger/OpenAPI docs generation  | `http:*`                 | –         |
+| Module Name         | Purpose                          | Requires                 | Conflicts |
+| ------------------- | -------------------------------- | ------------------------ | --------- |
+| `feature:i18n`      | i18n JSON file loader            | `platform:base`          | –         |
+| `feature:auth`      | JWT auth middleware              | `http:gin` or `http:chi` | –         |
+| `feature:health`    | `/health` and `/ready` endpoints | `http:*`                 | –         |
+| `feature:metrics`   | Prometheus metrics endpoint      | `http:*`                 | –         |
+| `feature:swagger`   | Swagger/OpenAPI docs generation  | `http:*`                 | –         |
+| `feature:gitignore` | .gitignore generator             | `platform:base`          | –         |
+| `feature:dockerfile`| Multi-stage Dockerfile generator | `platform:base`          | –         |

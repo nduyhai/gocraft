@@ -1,0 +1,37 @@
+# syntax=docker/dockerfile:1
+
+# ===== Build stage =====
+FROM golang:1.24-alpine AS build
+
+# Install build tools
+RUN apk add --no-cache git ca-certificates && update-ca-certificates
+
+WORKDIR /src
+
+# Leverage Go modules cache
+COPY go.mod go.sum ./
+RUN --mount=type=cache,target=/go/pkg/mod \
+    go mod download
+
+# Copy the rest of the source
+COPY . .
+
+# Build static binary
+ARG TARGETOS=linux
+ARG TARGETARCH=amd64
+RUN --mount=type=cache,target=/go/pkg/mod \
+    CGO_ENABLED=0 GOOS=${TARGETOS} GOARCH=${TARGETARCH} \
+    go build -trimpath -ldflags "-s -w" -o /out/{{ .Name }} ./cmd/{{ .Name }}
+
+# ===== Runtime stage =====
+FROM gcr.io/distroless/static:nonroot
+
+WORKDIR /app
+COPY --from=build /out/{{ .Name }} /app/{{ .Name }}
+
+USER nonroot:nonroot
+
+# Adjust if your service listens on another port
+EXPOSE 8080
+
+ENTRYPOINT ["/app/{{ .Name }}"]
