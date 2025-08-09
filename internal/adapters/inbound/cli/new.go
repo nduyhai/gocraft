@@ -3,6 +3,7 @@ package cli
 import (
 	"fmt"
 	"path/filepath"
+	"strings"
 
 	"github.com/nduyhai/go-clean-arch-starter/internal/adapters/outbound/context/contextimpl"
 	"github.com/nduyhai/go-clean-arch-starter/internal/adapters/outbound/fs/oswriter"
@@ -16,6 +17,7 @@ import (
 func newNewCmd() *cobra.Command {
 	var (
 		module string
+		with   []string
 	)
 
 	cmd := &cobra.Command{
@@ -48,15 +50,20 @@ func newNewCmd() *cobra.Command {
 
 			// Use usecase to apply module(s)
 			uc := usecase.ApplyModules{Registry: r}
-			if err := uc.Execute(ctx, "platform:base"); err != nil {
+			mods := append([]string{"platform:base"}, with...)
+			if err := uc.Execute(ctx, mods...); err != nil {
 				return err
 			}
 			_, _ = fmt.Fprintf(cmd.OutOrStdout(), "Project generated at %s\n", target)
+			if len(with) > 0 {
+				_, _ = fmt.Fprintf(cmd.OutOrStdout(), "Applied modules: %s\n", strings.Join(with, ", "))
+			}
 			return nil
 		},
 	}
 
 	cmd.Flags().StringVarP(&module, "module", "m", "", "Go module path (default: github.com/you/<name>)")
+	cmd.Flags().StringSliceVar(&with, "with", nil, "Additional modules to apply (e.g. --with http:gin)")
 	// Template (-t) and output (-o) flags are no longer needed; default template is platform:base via modules and output is ./<name>
 	return cmd
 }

@@ -2,8 +2,15 @@ package adapters
 
 import "go.uber.org/fx"
 
+// Extras holds additional fx options registered by add-on modules at init time.
+var Extras []fx.Option
+
+// Register allows external modules to append their fx.Options without modifying this file.
+func Register(opts ...fx.Option) { Extras = append(Extras, opts...) }
+
 func Module() fx.Option {
 	return fx.Options(
 		// Adapters wiring goes here (DB, cache, transports...)
+		fx.Options(Extras...),
 	)
 }

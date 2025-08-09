@@ -1,0 +1,9 @@
+# HTTP Gin Module
+
+This directory contains the Gin HTTP server wiring added by gocraft module http:gin.
+
+- Listens on configurable address (default :8080). Override with PORT env or config.server.http.addr.
+- Endpoints:
+  - GET /healthz
+  - GET /metrics (Prometheus)
+- Middlewares: recovery, request ID (X-Request-ID), basic logging, permissive CORS.

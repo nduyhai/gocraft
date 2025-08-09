@@ -1,6 +1,7 @@
 package register
 
 import (
+	ginmodule "github.com/nduyhai/go-clean-arch-starter/internal/adapters/outbound/modules/http/gin"
 	"github.com/nduyhai/go-clean-arch-starter/internal/adapters/outbound/modules/platform/base"
 	"github.com/nduyhai/go-clean-arch-starter/internal/core/ports"
 )
@@ -14,5 +15,6 @@ import (
 func Builtins(r ports.Registry) {
 	// Platform base module (Fx + Viper, logger, DI root, basic structure)
 	r.Register(base.New())
-	// TODO: add other built-in modules here as they are implemented, e.g. http:gin, grpc:server, db:postgres, etc.
+	// HTTP Gin server module
+	r.Register(ginmodule.New())
 }
