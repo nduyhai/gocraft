@@ -14,7 +14,7 @@ go install github.com/nduyhai/go-clean-arch-starter/cmd/cleanctl@latest
 ## Usage
 
 ```bash
-cleanctl new myapp -m github.com/you/myapp -t basic -o ./myapp
+cleanctl new myapp -m github.com/you/myapp
 ```
 
 This generates:

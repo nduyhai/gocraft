@@ -1,24 +1,20 @@
 package cli
 
 import (
-	"context"
 	"fmt"
 	"path/filepath"
 
+	contextimpl "github.com/nduyhai/go-clean-arch-starter/internal/adapters/outbound/context/contextimpl"
 	"github.com/nduyhai/go-clean-arch-starter/internal/adapters/outbound/fs/oswriter"
-	"github.com/nduyhai/go-clean-arch-starter/internal/adapters/outbound/hooks/exec"
+	"github.com/nduyhai/go-clean-arch-starter/internal/adapters/outbound/modules/register"
+	regsimple "github.com/nduyhai/go-clean-arch-starter/internal/adapters/outbound/registry/simple"
 	"github.com/nduyhai/go-clean-arch-starter/internal/adapters/outbound/rendering/texttmpl"
-	"github.com/nduyhai/go-clean-arch-starter/internal/adapters/outbound/templates/embed_repo"
-	"github.com/nduyhai/go-clean-arch-starter/internal/core/entity"
-	"github.com/nduyhai/go-clean-arch-starter/internal/core/usecase"
 	"github.com/spf13/cobra"
 )
 
 func newNewCmd() *cobra.Command {
 	var (
-		module   string
-		template string
-		target   string
+		module string
 	)
 
 	cmd := &cobra.Command{
@@ -30,25 +26,25 @@ func newNewCmd() *cobra.Command {
 			if module == "" {
 				module = fmt.Sprintf("github.com/you/%s", name)
 			}
-			if target == "" {
-				target = filepath.Join(".", name)
-			}
+			target := filepath.Join(".", name)
 
-			repo := embed_repo.New()
+			// Prepare outbound collaborators
 			renderer := texttmpl.New()
 			writer := oswriter.New()
-			hook := exec.New()
-			uc := usecase.GenerateProject{Templates: repo, Renderer: renderer, Writer: writer, Hook: hook}
 
-			p := entity.Project{
-				Name:      name,
-				Module:    module,
-				Template:  template,
-				Options:   map[string]string{},
-				TargetDir: target,
-			}
+			// Build module context
+			ctx := contextimpl.New(
+				target,
+				writer,
+				renderer,
+				nil, // GoModEditor not needed for base generation yet
+				map[string]any{"Name": name, "Module": module},
+			)
 
-			if err := uc.Execute(context.Background(), p); err != nil {
+			// Build registry and register built-ins, then apply platform:base
+			r := regsimple.New()
+			register.Builtins(r)
+			if err := r.Apply(ctx, "platform:base"); err != nil {
 				return err
 			}
 			_, _ = fmt.Fprintf(cmd.OutOrStdout(), "Project generated at %s\n", target)
@@ -57,7 +53,6 @@ func newNewCmd() *cobra.Command {
 	}
 
 	cmd.Flags().StringVarP(&module, "module", "m", "", "Go module path (default: github.com/you/<name>)")
-	cmd.Flags().StringVarP(&template, "template", "t", "basic", "Template name")
-	cmd.Flags().StringVarP(&target, "output", "o", "", "Target directory (default: ./<name>)")
+	// Template (-t) and output (-o) flags are no longer needed; default template is platform:base via modules and output is ./<name>
 	return cmd
 }
