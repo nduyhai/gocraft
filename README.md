@@ -1,14 +1,14 @@
 # cleanctl
 
 [![Go](https://img.shields.io/badge/go-1.24+-blue)](https://go.dev/)
-[![License](https://img.shields.io/github/license/you/cleanctl)](LICENSE)
+[![License](https://img.shields.io/github/license/ynduyhai/go-clean-arch-starter)](LICENSE)
 
 A CLI to generate Go projects with a clean architecture layout from embedded templates.
 
 ## Install
 
 ```bash
-go install https://github.com/nduyhai/go-clean-arch-starter/cmd/cleanctl@latest
+go install github.com/nduyhai/go-clean-arch-starter/cmd/cleanctl@latest
 ```
 
 ## Usage

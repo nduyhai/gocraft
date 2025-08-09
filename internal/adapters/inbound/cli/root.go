@@ -4,8 +4,8 @@ import (
 	"fmt"
 	"os"
 
+	"github.com/nduyhai/go-clean-arch-starter/pkg/version"
 	"github.com/spf13/cobra"
-	"github.com/you/cleanctl/pkg/version"
 )
 
 func NewRootCmd() *cobra.Command {

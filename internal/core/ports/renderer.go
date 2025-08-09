@@ -1,6 +1,6 @@
 package ports
 
-import "github.com/you/cleanctl/internal/core/entity"
+import "github.com/nduyhai/go-clean-arch-starter/internal/core/entity"
 
 type Renderer interface {
 	// Render processes the given template with the context and returns files to write.

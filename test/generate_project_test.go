@@ -6,11 +6,11 @@ import (
 	"path/filepath"
 	"testing"
 
-	"github.com/you/cleanctl/internal/adapters/outbound/fs/oswriter"
-	"github.com/you/cleanctl/internal/adapters/outbound/rendering/texttmpl"
-	embedrepo "github.com/you/cleanctl/internal/adapters/outbound/templates/embed_repo"
-	"github.com/you/cleanctl/internal/core/entity"
-	"github.com/you/cleanctl/internal/core/usecase"
+	"github.com/nduyhai/go-clean-arch-starter/internal/adapters/outbound/fs/oswriter"
+	"github.com/nduyhai/go-clean-arch-starter/internal/adapters/outbound/rendering/texttmpl"
+	embedrepo "github.com/nduyhai/go-clean-arch-starter/internal/adapters/outbound/templates/embed_repo"
+	"github.com/nduyhai/go-clean-arch-starter/internal/core/entity"
+	"github.com/nduyhai/go-clean-arch-starter/internal/core/usecase"
 )
 
 func TestGenerateProject_Basic(t *testing.T) {

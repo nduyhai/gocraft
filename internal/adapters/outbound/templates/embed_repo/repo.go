@@ -6,7 +6,7 @@ import (
 	"io/fs"
 	"strings"
 
-	"github.com/you/cleanctl/internal/core/ports"
+	"github.com/nduyhai/go-clean-arch-starter/internal/core/ports"
 )
 
 //go:embed templates/**

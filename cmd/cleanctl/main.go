@@ -3,7 +3,7 @@ package main
 import (
 	"os"
 
-	"github.com/you/cleanctl/internal/adapters/inbound/cli"
+	"github.com/nduyhai/go-clean-arch-starter/internal/adapters/inbound/cli"
 )
 
 func main() {

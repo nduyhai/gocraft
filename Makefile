@@ -10,8 +10,11 @@ GOMOD=$(GOCMD) mod
 GOLINT=golangci-lint
 GOIMPORTS=goimports
 
+# Version (fallback to dev when git metadata is unavailable)
+VERSION ?= $(shell git describe --tags --always --dirty 2>/dev/null || echo dev)
+
 # Binary name
-BINARY_NAME=go-module
+BINARY_NAME=cleanctl
 
 ## Docker
 DOCKER_IMAGE_NAME=$(BINARY_NAME)-app
@@ -22,16 +25,16 @@ DOCKERFILE=Dockerfile
 BUILD_DIR=build
 
 # Main package path
-MAIN_PACKAGE=.
+MAIN_PACKAGE=./cmd/cleanctl
 
-.PHONY: all build test clean lint deps help goimports docker-build docker-buildx docker-run docker-clean
+.PHONY: all build install run test test-coverage clean lint deps verify help goimports docker-build docker-buildx docker-run docker-clean
 
 all: test goimports fmt build
 
 # Build the project
 build:
 	mkdir -p $(BUILD_DIR)
-	$(GOBUILD) -o $(BUILD_DIR)/$(BINARY_NAME) $(MAIN_PACKAGE)
+	$(GOBUILD) -ldflags="-s -w -X github.com/nduyhai/go-clean-arch-starter/pkg/version.Version=$(VERSION)" -o $(BUILD_DIR)/$(BINARY_NAME) $(MAIN_PACKAGE)
 
 # Run tests
 test:
@@ -97,22 +100,27 @@ docker-clean:
 run:
 	$(GOCMD) run $(MAIN_PACKAGE)
 
+# Install the binary into GOPATH/bin or GOBIN
+install:
+	$(GOCMD) install -ldflags="-s -w -X github.com/nduyhai/go-clean-arch-starter/pkg/version.Version=$(VERSION)" $(MAIN_PACKAGE)
+
 # Show help
 help:
 	@echo "Make targets:"
-	@echo "  all          - Run tests and build"
-	@echo "  build        - Build the binary"
-	@echo "  run          - Run the application"
-	@echo "  test         - Run tests"
-	@echo "  test-coverage - Run tests with coverage report"
-	@echo "  clean        - Clean build artifacts"
-	@echo "  deps         - Install dependencies"
-	@echo "  lint         - Run linter"
-	@echo "  fmt          - Format code"
-	@echo "  goimports    - Run goimports to format code and update imports"
-	@echo "  verify       - Verify dependencies"
+	@echo "  all            - Run tests and build"
+	@echo "  build          - Build the cleanctl binary"
+	@echo "  install        - Install the cleanctl binary to GOBIN/GOPATH/bin"
+	@echo "  run            - Run the cleanctl CLI"
+	@echo "  test           - Run tests"
+	@echo "  test-coverage  - Run tests with coverage report"
+	@echo "  clean          - Clean build artifacts"
+	@echo "  deps           - Install dependencies"
+	@echo "  lint           - Run linter"
+	@echo "  fmt            - Format code"
+	@echo "  goimports      - Run goimports to format code and update imports"
+	@echo "  verify         - Verify dependencies"
 	@echo "  docker-build   - Build the Docker image"
 	@echo "  docker-buildx  - Build the multi-arch Docker image"
 	@echo "  docker-run     - Run the Docker container"
 	@echo "  docker-clean   - Remove the Docker image"
-	@echo "  help         - Show this help"
+	@echo "  help           - Show this help"

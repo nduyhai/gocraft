@@ -7,7 +7,7 @@ import (
 	"os"
 	"path/filepath"
 
-	"github.com/you/cleanctl/internal/core/entity"
+	"github.com/nduyhai/go-clean-arch-starter/internal/core/entity"
 )
 
 type Writer struct{}

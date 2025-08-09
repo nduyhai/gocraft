@@ -6,8 +6,8 @@ import (
 	"strings"
 	"text/template"
 
-	"github.com/you/cleanctl/internal/core/entity"
-	"github.com/you/cleanctl/internal/core/ports"
+	"github.com/nduyhai/go-clean-arch-starter/internal/core/entity"
+	"github.com/nduyhai/go-clean-arch-starter/internal/core/ports"
 )
 
 type Renderer struct{}

@@ -5,13 +5,13 @@ import (
 	"fmt"
 	"path/filepath"
 
+	"github.com/nduyhai/go-clean-arch-starter/internal/adapters/outbound/fs/oswriter"
+	"github.com/nduyhai/go-clean-arch-starter/internal/adapters/outbound/hooks/exec"
+	"github.com/nduyhai/go-clean-arch-starter/internal/adapters/outbound/rendering/texttmpl"
+	"github.com/nduyhai/go-clean-arch-starter/internal/adapters/outbound/templates/embed_repo"
+	"github.com/nduyhai/go-clean-arch-starter/internal/core/entity"
+	"github.com/nduyhai/go-clean-arch-starter/internal/core/usecase"
 	"github.com/spf13/cobra"
-	"github.com/you/cleanctl/internal/adapters/outbound/fs/oswriter"
-	"github.com/you/cleanctl/internal/adapters/outbound/hooks/exec"
-	"github.com/you/cleanctl/internal/adapters/outbound/rendering/texttmpl"
-	"github.com/you/cleanctl/internal/adapters/outbound/templates/embed_repo"
-	"github.com/you/cleanctl/internal/core/entity"
-	"github.com/you/cleanctl/internal/core/usecase"
 )
 
 func newNewCmd() *cobra.Command {
