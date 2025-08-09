@@ -1,42 +1,29 @@
-# go-module
+# cleanctl
 
 [![Go](https://img.shields.io/badge/go-1.24+-blue)](https://go.dev/)
-[![License](https://img.shields.io/github/license/nduyhai/go-module)](LICENSE)
+[![License](https://img.shields.io/github/license/you/cleanctl)](LICENSE)
 
-A GitHub template repository for bootstrapping a new Go project with a clean, idiomatic layout.
+A CLI to generate Go projects with a clean architecture layout from embedded templates.
 
-## Features
-
-- ✅ Linter config (`golangci-lint`)
-- ✅ GitHub actions
-- ✅ Basic Makefile
-- ✅ MIT License
-
-## Getting Started
-
-### 📦 Create a New Project
-
-Click the **[Use this template](https://github.com/your-org/go-module/generate)** button to generate a new repository based on this template.
-
-### 🛠️ Customize
-
-After creating your repo, follow these steps:
+## Install
 
 ```bash
-# Clone your new project
-git clone https://github.com/your-username/your-project-name
-cd your-project-name
-
-# Update module path
-go mod edit -module github.com/your-username/your-project-name
-
-# Tidy up dependencies
-go mod tidy
-```
-Edit the README.md, package names, and other placeholders as needed.
-
-### 🏃 Run the Project
-```shell
-make run
+go install https://github.com/nduyhai/go-clean-arch-starter/cmd/cleanctl@latest
 ```
 
+## Usage
+
+```bash
+cleanctl new myapp -m github.com/you/myapp -t basic -o ./myapp
+```
+
+This generates:
+- go.mod (module set to github.com/you/myapp)
+- cmd/api/main.go
+- README.md
+
+Then optionally initialize git and tidy dependencies automatically.
+
+## Structure
+
+See internal directory for core, adapters, and platform layers. Templates are embedded in internal/adapters/outbound/templates/embed_repo/templates.
