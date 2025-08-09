@@ -106,7 +106,7 @@ See internal directory for core, adapters, and platform layers. Templates are em
 | `db:migration` | Goose or Atlas migrations         | `platform:base` | –                         |
 
 
-### Caching
+### Caching, Queue
 
 | Module Name      | Purpose                    | Requires        | Conflicts |
 | ---------------- | -------------------------- | --------------- | --------- |
