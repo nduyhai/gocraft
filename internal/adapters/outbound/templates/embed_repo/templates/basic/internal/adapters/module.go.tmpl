@@ -1,20 +1,9 @@
 package adapters
 
-import (
-	"go.uber.org/fx"
+import "go.uber.org/fx"
 
-	"{{ .Module }}/internal/adapters/outbound/memory"
-	"{{ .Module }}/internal/core/ports"
-)
-
-// Swap this module when you add Postgres/MySQL/GORM feature packs.
-var Module = fx.Module(
-	"adapters",
-	fx.Provide(
-		func() ports.UserRepository {
-			// Provide under a name so usecase constructor can require it explicitly
-			return memory.NewUserRepo()
-		},
-		fx.Annotate(memory.NewUserRepo, fx.ResultTags(`name:"userrepo"`)),
-	),
-)
+func Module() fx.Option {
+	return fx.Options(
+		// Adapters wiring goes here (DB, cache, transports...)
+	)
+}
