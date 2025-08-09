@@ -2,8 +2,9 @@ package base
 
 import (
 	"fmt"
+	"io/fs"
+	"strings"
 
-	embedrepo "github.com/nduyhai/go-clean-arch-starter/internal/adapters/outbound/templates/embed_repo"
 	"github.com/nduyhai/go-clean-arch-starter/internal/core/ports"
 )
 
@@ -35,12 +36,31 @@ func (Module) Conflicts() []string { return nil }
 func (Module) Applies(ctx ports.Ctx) bool { return true }
 
 func (Module) Apply(ctx ports.Ctx) error {
-	// Load embedded template
-	repo := embedrepo.New()
-	tpl, err := repo.Load("basic")
+	// Build template from embedded TemplatesFS
+	sub, err := fs.Sub(TemplatesFS, "templates")
 	if err != nil {
-		return fmt.Errorf("load template: %w", err)
+		return fmt.Errorf("sub fs: %w", err)
 	}
+	var tfiles []ports.TmplFile
+	err = fs.WalkDir(sub, ".", func(path string, d fs.DirEntry, err error) error {
+		if err != nil {
+			return err
+		}
+		if d.IsDir() {
+			return nil
+		}
+		b, err := fs.ReadFile(sub, path)
+		if err != nil {
+			return err
+		}
+		clean := strings.TrimPrefix(path, "./")
+		tfiles = append(tfiles, ports.TmplFile{Path: clean, Content: string(b)})
+		return nil
+	})
+	if err != nil {
+		return fmt.Errorf("walk: %w", err)
+	}
+	tpl := ports.Template{Name: "basic", Files: tfiles}
 	// Render with provided values (.Name, .Module)
 	files, err := ctx.Renderer().Render(tpl, ctx.Values())
 	if err != nil {

@@ -1,21 +1,14 @@
 package embed_repo
 
 import (
-	"embed"
 	"fmt"
 	"io/fs"
 	"strings"
 
+	ginmodule "github.com/nduyhai/go-clean-arch-starter/internal/adapters/outbound/modules/http/gin"
+	base "github.com/nduyhai/go-clean-arch-starter/internal/adapters/outbound/modules/platform/base"
 	"github.com/nduyhai/go-clean-arch-starter/internal/core/ports"
 )
-
-//go:embed templates/** templates/basic/cmd/__name__/**
-//go:embed templates/basic/internal/adapters/inbound/.gitkeep
-//go:embed templates/basic/internal/adapters/outbound/.gitkeep
-//go:embed templates/basic/internal/core/entity/.gitkeep
-//go:embed templates/basic/internal/core/ports/.gitkeep
-//go:embed templates/basic/internal/core/usecase/.gitkeep
-var filesFS embed.FS
 
 // New returns an embedded template repository with available templates.
 func New() ports.TemplateRepo { return &repo{names: []string{"basic", "http:gin"}} }
@@ -25,30 +18,36 @@ type repo struct{ names []string }
 func (r *repo) Names() []string { return append([]string(nil), r.names...) }
 
 func (r *repo) Load(name string) (ports.Template, error) {
-	// Map template name to its base directory under templates/
-	var base string
+	var (
+		fsys fs.FS
+	)
 	switch name {
 	case "basic":
-		base = "templates/basic"
+		fsys = base.TemplatesFS
 	case "http:gin":
-		base = "templates/http/gin"
+		fsys = ginmodule.TemplatesFS
 	default:
 		return ports.Template{}, fmt.Errorf("unknown template: %s", name)
 	}
+	// We want paths relative to the root of the templates dir
+	sub, err := fs.Sub(fsys, "templates")
+	if err != nil {
+		return ports.Template{}, err
+	}
 	var files []ports.TmplFile
-	err := fs.WalkDir(filesFS, base, func(path string, d fs.DirEntry, err error) error {
+	err = fs.WalkDir(sub, ".", func(path string, d fs.DirEntry, err error) error {
 		if err != nil {
 			return err
 		}
 		if d.IsDir() {
 			return nil
 		}
-		b, err := fs.ReadFile(filesFS, path)
+		b, err := fs.ReadFile(sub, path)
 		if err != nil {
 			return err
 		}
-		rel := strings.TrimPrefix(path, base+"/")
-		files = append(files, ports.TmplFile{Path: rel, Content: string(b)})
+		clean := strings.TrimPrefix(path, "./")
+		files = append(files, ports.TmplFile{Path: clean, Content: string(b)})
 		return nil
 	})
 	if err != nil {
