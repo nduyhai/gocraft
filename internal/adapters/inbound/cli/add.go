@@ -8,10 +8,10 @@ import (
 	"path/filepath"
 	"strings"
 
-	contextimpl "github.com/nduyhai/go-clean-arch-starter/internal/adapters/outbound/context/contextimpl"
+	"github.com/nduyhai/go-clean-arch-starter/internal/adapters/outbound/context/contextimpl"
 	"github.com/nduyhai/go-clean-arch-starter/internal/adapters/outbound/fs/oswriter"
 	"github.com/nduyhai/go-clean-arch-starter/internal/adapters/outbound/modules/register"
-	regsimple "github.com/nduyhai/go-clean-arch-starter/internal/adapters/outbound/registry/embed_registry"
+	"github.com/nduyhai/go-clean-arch-starter/internal/adapters/outbound/registry/embed_registry"
 	"github.com/nduyhai/go-clean-arch-starter/internal/adapters/outbound/rendering/texttmpl"
 	"github.com/nduyhai/go-clean-arch-starter/internal/core/usecase"
 	"github.com/spf13/cobra"
@@ -48,7 +48,7 @@ func newAddCmd() *cobra.Command {
 			})
 
 			// Registry and built-ins
-			r := regsimple.New()
+			r := embed_registry.New()
 			register.Builtins(r)
 
 			// Use usecase to apply modules

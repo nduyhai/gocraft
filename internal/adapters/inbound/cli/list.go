@@ -6,7 +6,7 @@ import (
 	"strings"
 
 	"github.com/nduyhai/go-clean-arch-starter/internal/adapters/outbound/modules/register"
-	regsimple "github.com/nduyhai/go-clean-arch-starter/internal/adapters/outbound/registry/embed_registry"
+	"github.com/nduyhai/go-clean-arch-starter/internal/adapters/outbound/registry/embed_registry"
 	"github.com/nduyhai/go-clean-arch-starter/internal/core/usecase"
 	"github.com/spf13/cobra"
 )
@@ -17,7 +17,7 @@ func newListCmd() *cobra.Command {
 		Short: "List available modules",
 		RunE: func(cmd *cobra.Command, args []string) error {
 			// Build a registry and register built-in modules
-			r := regsimple.New()
+			r := embed_registry.New()
 			register.Builtins(r)
 
 			// Use usecase to list modules
