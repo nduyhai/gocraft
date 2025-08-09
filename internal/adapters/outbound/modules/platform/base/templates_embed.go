@@ -13,7 +13,6 @@ import "embed"
 //
 //go:embed templates/*.tmpl
 //go:embed templates/config/**
-//go:embed templates/internal/adapters/module.go.tmpl
 //go:embed templates/internal/platform/**
 //go:embed templates/cmd/__name__/**
 var TemplatesFS embed.FS
