@@ -46,7 +46,7 @@ func (e *Editor) Add(module, version string) error {
 		end := strings.Index(content[idx:], ")")
 		if end > 0 {
 			insertPos := idx + end
-			content = content[:insertPos] + "\n" + line + content[insertPos:]
+			content = content[:insertPos] + "\n" + line + "\n" + content[insertPos:]
 		} else {
 			// malformed; append a new block at end
 			if !strings.HasSuffix(content, "\n") {

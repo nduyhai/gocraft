@@ -12,7 +12,7 @@ import (
 )
 
 // Editor implements ports.AdaptersModuleEditor by editing
-// <root>/internal/adapters/module.go in-place using robust string operations.
+// <root>/internal/platform/di/root.go in-place using robust string operations.
 // All operations are idempotent.
 
 type Editor struct{ root string }
@@ -23,10 +23,23 @@ func (e *Editor) Ensure(alias, importPath, optionExpr string) error {
 	if alias == "" || importPath == "" || optionExpr == "" {
 		return fmt.Errorf("invalid ensure args: alias/importPath/optionExpr must be non-empty")
 	}
-	modFile := filepath.Join(e.root, "internal", "adapters", "module.go")
-	b, err := os.ReadFile(modFile)
+	// Update DI root: internal/platform/di/root.go if present.
+	// Update DI root: internal/platform/di/root.go if present.
+	err := e.ensureInFile(
+		filepath.Join(e.root, "internal", "platform", "di", "root.go"),
+		"package di\n",
+		alias, importPath, optionExpr,
+	)
+	return err
+}
+
+// ensureInFile ensures an import alias/path and fx option expression exist in the given file.
+// pkgLine is the exact "package <name>\n" line used as a fallback anchor when no import block exists.
+func (e *Editor) ensureInFile(filePath, pkgLine, alias, importPath, optionExpr string) error {
+	b, err := os.ReadFile(filePath)
 	if err != nil {
-		return fmt.Errorf("read adapters/module.go: %w", err)
+		// If the file doesn't exist, do nothing (idempotent behavior for varying templates).
+		return nil
 	}
 	content := string(b)
 
@@ -78,43 +91,37 @@ func (e *Editor) Ensure(alias, importPath, optionExpr string) error {
 			content = buf.String()
 		} else {
 			// no import block; add after package line
-			content = strings.Replace(content, "package adapters\n", "package adapters\n\nimport (\n"+importLine+"\n)\n\n", 1)
+			content = strings.Replace(content, pkgLine, pkgLine+"\nimport (\n"+importLine+"\n)\n\n", 1)
 		}
 	}
 
-	// Ensure fx.Option reference exists
+	// Ensure fx.Option reference exists by inserting before the closing ')' of return fx.Options(
 	if !strings.Contains(content, optionExpr) {
-		needle := "\t\tfx.Options(Extras...),"
-		if strings.Contains(content, needle) {
-			content = strings.Replace(content, needle, needle+"\n\t\t"+optionExpr+",", 1)
-		} else {
-			// Fallback: insert before the closing ')' of return fx.Options(
-			blockStart := strings.Index(content, "return fx.Options(")
-			if blockStart >= 0 {
-				s := content[blockStart:]
-				open := 0
-				idx := -1
-				for i, ch := range s {
-					if ch == '(' {
-						open++
-					}
-					if ch == ')' {
-						open--
-						if open == 0 {
-							idx = i
-							break
-						}
+		blockStart := strings.Index(content, "return fx.Options(")
+		if blockStart >= 0 {
+			s := content[blockStart:]
+			open := 0
+			idx := -1
+			for i, ch := range s {
+				if ch == '(' {
+					open++
+				}
+				if ch == ')' {
+					open--
+					if open == 0 {
+						idx = i
+						break
 					}
 				}
-				if idx > 0 {
-					insertAt := blockStart + idx
-					content = content[:insertAt] + "\n\t\t" + optionExpr + "," + content[insertAt:]
-				}
+			}
+			if idx > 0 {
+				insertAt := blockStart + idx
+				content = content[:insertAt] + "\n\t\t" + optionExpr + "," + content[insertAt:]
 			}
 		}
 	}
 
-	return os.WriteFile(modFile, []byte(content), 0o644)
+	return os.WriteFile(filePath, []byte(content), 0o644)
 }
 
 var _ ports.AdaptersModuleEditor = (*Editor)(nil)

@@ -1,0 +1,93 @@
+package httpchi
+
+import (
+	"context"
+	"log/slog"
+	"net/http"
+	"os"
+	"time"
+
+	"github.com/go-chi/chi/v5"
+	chimw "github.com/go-chi/chi/v5/middleware"
+	"github.com/prometheus/client_golang/prometheus/promhttp"
+	"github.com/spf13/viper"
+	"go.uber.org/fx"
+)
+
+// httpConfig holds minimal server configuration.
+type httpConfig struct {
+	Addr string `mapstructure:"server.http.addr"`
+}
+
+func loadHTTPConfig() *httpConfig {
+	// Defaults
+	addr := ":8080"
+	// Support PORT env as a common convention
+	if p := os.Getenv("PORT"); p != "" {
+		addr = ":" + p
+	}
+	// Try read config/config.yml; ignore errors and fall back to defaults
+	v := viper.New()
+	v.SetConfigName("config")
+	v.SetConfigType("yaml")
+	v.AddConfigPath("config")
+	_ = v.ReadInConfig()
+	if v.IsSet("server.http.addr") {
+		addr = v.GetString("server.http.addr")
+	}
+	return &httpConfig{Addr: addr}
+}
+
+// newMux constructs a chi.Mux with middlewares and routes.
+func newMux(log *slog.Logger) *chi.Mux {
+	r := chi.NewRouter()
+	// Recovery
+	r.Use(chimw.Recoverer)
+	// Custom middlewares to mirror gin variant
+	r.Use(requestID())
+	r.Use(requestLogger(log))
+	r.Use(corsAllowAll())
+
+	// Health endpoint
+	r.Get("/healthz", func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Set("Content-Type", "application/json")
+		w.WriteHeader(http.StatusOK)
+		_, _ = w.Write([]byte(`{"status":"ok"}`))
+	})
+	// Prometheus metrics
+	r.Handle("/metrics", promhttp.Handler())
+	return r
+}
+
+// startServer registers lifecycle hooks to start/stop HTTP server.
+func startServer(lc fx.Lifecycle, log *slog.Logger, cfg *httpConfig, mux *chi.Mux) {
+	server := &http.Server{Addr: cfg.Addr, Handler: mux}
+	lc.Append(fx.Hook{
+		OnStart: func(ctx context.Context) error {
+			go func() {
+				if err := server.ListenAndServe(); err != nil && err != http.ErrServerClosed {
+					log.Error("http server error", "err", err)
+				}
+			}()
+			log.Info("http server started", "addr", cfg.Addr)
+			return nil
+		},
+		OnStop: func(ctx context.Context) error {
+			ctx, cancel := context.WithTimeout(ctx, 5*time.Second)
+			defer cancel()
+			log.Info("shutting down http server")
+			return server.Shutdown(ctx)
+		},
+	})
+}
+
+// Module wires the HTTP server components.
+func Module() fx.Option {
+	return fx.Options(
+		fx.Provide(
+			loadHTTPConfig,
+			newMux,
+		),
+		fx.Invoke(startServer),
+	)
+}

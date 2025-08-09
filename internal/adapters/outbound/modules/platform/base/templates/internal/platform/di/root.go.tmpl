@@ -4,13 +4,11 @@ import (
 	"go.uber.org/fx"
 	"{{ .Module }}/internal/platform/env"
 	"{{ .Module }}/internal/platform/logger"
-	"{{ .Module }}/internal/adapters"
 )
 
 func Root() fx.Option {
 	return fx.Options(
 		env.Module(),
 		logger.Module(),
-		adapters.Module(),
 	)
 }

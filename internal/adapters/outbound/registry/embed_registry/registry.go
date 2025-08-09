@@ -170,9 +170,7 @@ func (r *Registry) toposort(set map[string]struct{}) ([]string, error) {
 			return nil, err
 		}
 	}
-	// reverse postorder gives topological order with requires before dependents
-	for i, j := 0, len(order)-1; i < j; i, j = i+1, j-1 {
-		order[i], order[j] = order[j], order[i]
-	}
+	// Note: With adjacency defined as name -> requires, the postorder already
+	// yields an order where requirements come before dependents. Do not reverse.
 	return order, nil
 }
