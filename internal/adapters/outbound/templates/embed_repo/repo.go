@@ -9,7 +9,12 @@ import (
 	"github.com/nduyhai/go-clean-arch-starter/internal/core/ports"
 )
 
-//go:embed templates/**
+//go:embed templates/** templates/basic/cmd/__name__/**
+//go:embed templates/basic/internal/adapters/inbound/.gitkeep
+//go:embed templates/basic/internal/adapters/outbound/.gitkeep
+//go:embed templates/basic/internal/core/entity/.gitkeep
+//go:embed templates/basic/internal/core/ports/.gitkeep
+//go:embed templates/basic/internal/core/usecase/.gitkeep
 var filesFS embed.FS
 
 // New returns an embedded template repository with a single template named "basic".
