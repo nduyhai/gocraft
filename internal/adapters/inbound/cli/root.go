@@ -20,6 +20,8 @@ func NewRootCmd() *cobra.Command {
 	cmd.Version = version.Version
 
 	cmd.AddCommand(newNewCmd())
+	cmd.AddCommand(newListCmd())
+	cmd.AddCommand(newAddCmd())
 	cmd.AddCommand(newCompletionCmd())
 
 	cmd.SilenceUsage = true

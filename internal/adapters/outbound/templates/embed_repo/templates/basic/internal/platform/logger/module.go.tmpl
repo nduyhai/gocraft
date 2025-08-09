@@ -3,17 +3,25 @@ package logger
 import (
 	"log/slog"
 	"os"
+	"strings"
 
 	"go.uber.org/fx"
+	"{{ .Module }}/internal/platform/env"
 )
 
-func provideLogger() *slog.Logger {
-	lvl := new(slog.LevelVar)
-	lvl.Set(slog.LevelInfo)
-	return slog.New(slog.NewTextHandler(os.Stdout, &slog.HandlerOptions{Level: lvl}))
+func Module() fx.Option {
+	return fx.Provide(func(cfg *env.Config) *slog.Logger {
+		level := slog.LevelInfo
+		switch strings.ToLower(cfg.Logger.Level) {
+		case "debug":
+			level = slog.LevelDebug
+		case "warn":
+			level = slog.LevelWarn
+		case "error":
+			level = slog.LevelError
+		}
+		return slog.New(slog.NewTextHandler(os.Stdout, &slog.HandlerOptions{
+			Level: level,
+		}))
+	})
 }
-
-var Module = fx.Module(
-	"logger",
-	fx.Provide(provideLogger),
-)

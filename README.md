@@ -14,7 +14,7 @@ go install github.com/nduyhai/go-clean-arch-starter/cmd/cleanctl@latest
 ## Usage
 
 ```bash
-cleanctl new myapp -m github.com/you/myapp -t basic -o ./myapp
+cleanctl new myapp -m github.com/you/myapp
 ```
 
 This generates:
@@ -72,3 +72,56 @@ See internal directory for core, adapters, and platform layers. Templates are em
 └─ README.md
 
 ```
+
+## Module
+
+### Core
+| Module Name              | Purpose                                 | Requires        | Conflicts |
+| ------------------------ | --------------------------------------- | --------------- | --------- |
+| `platform:base`          | Fx + Viper config, logger, DI root      | –               | –         |
+| `platform:logger`        | Structured logging (slog or zap)        | `platform:base` | –         |
+| `platform:testing`       | Unit test helpers, testcontainers setup | `platform:base` | –         |
+| `platform:observability` | OpenTelemetry tracing, metrics, pprof   | `platform:base` | –         |
+
+
+### Transports
+
+| Module Name   | Purpose                                 | Requires        | Conflicts               |
+| ------------- | --------------------------------------- | --------------- | ----------------------- |
+| `http:gin`    | HTTP server via Gin, DI lifecycle       | `platform:base` | `http:chi`, `http:echo` |
+| `http:chi`    | HTTP server via Chi                     | `platform:base` | `http:gin`, `http:echo` |
+| `grpc:server` | gRPC server transport                   | `platform:base` | –                       |
+| `grpc:client` | gRPC client support                     | `platform:base` | –                       |
+| `rest:client` | HTTP client with retry, circuit breaker | `platform:base` | –                       |
+
+
+### Database
+
+| Module Name    | Purpose                           | Requires        | Conflicts                 |
+| -------------- | --------------------------------- | --------------- | ------------------------- |
+| `db:postgres`  | Postgres adapter (pgx/sqlc)       | `platform:base` | `db:mysql`, `db:gorm`     |
+| `db:mysql`     | MySQL adapter (sqlc/mysql driver) | `platform:base` | `db:postgres`, `db:gorm`  |
+| `db:gorm`      | ORM with GORM                     | `platform:base` | `db:postgres`, `db:mysql` |
+| `db:sqlite`    | SQLite for local dev/tests        | `platform:base` | –                         |
+| `db:migration` | Goose or Atlas migrations         | `platform:base` | –                         |
+
+
+### Caching
+
+| Module Name      | Purpose                    | Requires        | Conflicts |
+| ---------------- | -------------------------- | --------------- | --------- |
+| `cache:redis`    | Redis connection + helper  | `platform:base` | –         |
+| `queue:kafka`    | Kafka producer/consumer    | `platform:base` | –         |
+| `queue:rabbitmq` | RabbitMQ producer/consumer | `platform:base` | –         |
+| `pubsub:nats`    | NATS JetStream setup       | `platform:base` | –         |
+
+
+### Utilities
+
+| Module Name       | Purpose                          | Requires                 | Conflicts |
+| ----------------- | -------------------------------- | ------------------------ | --------- |
+| `feature:i18n`    | i18n JSON file loader            | `platform:base`          | –         |
+| `feature:auth`    | JWT auth middleware              | `http:gin` or `http:chi` | –         |
+| `feature:health`  | `/health` and `/ready` endpoints | `http:*`                 | –         |
+| `feature:metrics` | Prometheus metrics endpoint      | `http:*`                 | –         |
+| `feature:swagger` | Swagger/OpenAPI docs generation  | `http:*`                 | –         |

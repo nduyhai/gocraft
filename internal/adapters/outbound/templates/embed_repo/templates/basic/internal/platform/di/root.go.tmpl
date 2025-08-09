@@ -2,23 +2,15 @@ package di
 
 import (
 	"go.uber.org/fx"
-
 	"{{ .Module }}/internal/platform/env"
 	"{{ .Module }}/internal/platform/logger"
-	"{{ .Module }}/internal/core"
 	"{{ .Module }}/internal/adapters"
-	"{{ .Module }}/internal/adapters/inbound/http"
-	// " {{ .Module }}/internal/transport/grpcapi" // enable when using gRPC
 )
 
-// Root returns the top-level fx.Option that wires the entire app.
 func Root() fx.Option {
 	return fx.Options(
-		env.Module,       // config/env
-		logger.Module,    // slog logger
-		core.Module,      // core use cases + ports
-		adapters.Module,  // repositories, cache, etc. (choose impls here)
-		http.Module,   // HTTP server + routes (Gin or Chi)
-		// grpcapi.Module, // optional gRPC server
+		env.Module(),
+		logger.Module(),
+		adapters.Module(),
 	)
 }

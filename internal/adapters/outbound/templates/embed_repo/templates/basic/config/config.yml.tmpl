@@ -1,18 +1,2 @@
-# Base application configuration
-app_env: dev
-
-server:
-  addr: ":8080"
-  read_timeout: 5s
-  write_timeout: 10s
-
-grpc:
-  addr: ":9090"
-
-database:
-  # postgres://user:pass@localhost:5432/app?sslmode=disable
-  url: ""
-
-redis:
-  # redis://localhost:6379/0
-  url: ""
+logger:
+  level: info

@@ -1,81 +1,39 @@
 package env
 
 import (
+	"fmt"
 	"strings"
-	"time"
 
 	"github.com/spf13/viper"
 	"go.uber.org/fx"
 )
 
-type HTTP struct {
-	Addr         string        `mapstructure:"addr"`
-	ReadTimeout  time.Duration `mapstructure:"read_timeout"`
-	WriteTimeout time.Duration `mapstructure:"write_timeout"`
-}
-
-type GRPC struct {
-	Addr string `mapstructure:"addr"`
-}
-
-type Database struct {
-	URL string `mapstructure:"url"`
-}
-
-type Redis struct {
-	URL string `mapstructure:"url"`
-}
-
 type Config struct {
-	AppEnv   string   `mapstructure:"app_env"`
-	HTTP     HTTP     `mapstructure:"server"`
-	GRPC     GRPC     `mapstructure:"grpc"`
-	Database Database `mapstructure:"database"`
-	Redis    Redis    `mapstructure:"redis"`
+	Logger struct {
+		Level string `mapstructure:"level"`
+	} `mapstructure:"logger"`
 }
 
-// 1) Defaults < 2) YAML file config/config.yml < 3) ENV VARS  (env wins)
-func loadViper() *viper.Viper {
-	v := viper.New()
+func Module() fx.Option {
+	return fx.Provide(
+		func() (*Config, error) {
+			v := viper.New()
+			v.SetConfigName("config")
+			v.SetConfigType("yaml")
+			v.AddConfigPath("config")
+			v.AutomaticEnv()
+			v.SetEnvKeyReplacer(strings.NewReplacer(".", "_"))
 
-	// defaults
-	v.SetDefault("app_env", "dev")
-	v.SetDefault("server.addr", ":8080")
-	v.SetDefault("server.read_timeout", "5s")
-	v.SetDefault("server.write_timeout", "10s")
-	v.SetDefault("grpc.addr", ":9090")
-	v.SetDefault("database.url", "")
-	v.SetDefault("redis.url", "")
+			if err := v.ReadInConfig(); err != nil {
+				return nil, fmt.Errorf("read config: %w", err)
+			}
 
-	// config/config.yml (optional)
-	v.AddConfigPath("config")
-	v.SetConfigName("config")
-	v.SetConfigType("yaml")
-	_ = v.ReadInConfig() // ignore if not found
+			var cfg Config
+			if err := v.Unmarshal(&cfg); err != nil {
+				return nil, fmt.Errorf("unmarshal config: %w", err)
+			}
 
-	// ENV overrides (SERVER_ADDR overrides server.addr, etc.)
-	v.AutomaticEnv()
-	v.SetEnvKeyReplacer(strings.NewReplacer(".", "_"))
-	// (optional) prefix: v.SetEnvPrefix("APP") → APP_SERVER_ADDR, etc.
-
-	return v
+			return &cfg, nil
+		},
+	)
 }
-
-func provideConfig(v *viper.Viper) (Config, error) {
-	var c Config
-	if err := v.Unmarshal(&c); err != nil {
-		return c, err
-	}
-	// normalize: ensure leading ":" for addrs
-	if c.HTTP.Addr != "" && c.HTTP.Addr[0] != ':' { c.HTTP.Addr = ":" + c.HTTP.Addr }
-	if c.GRPC.Addr != "" && c.GRPC.Addr[0] != ':' { c.GRPC.Addr = ":" + c.GRPC.Addr }
-	return c, nil
-}
-
-var Module = fx.Module(
-	"env",
-	fx.Provide(
-		loadViper,
-		provideConfig,
-	),
-)
