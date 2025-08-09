@@ -1,8 +1,5 @@
 package ports
 
-type Ctx interface {
-}
-
 type Module interface {
 	Name() string  // machine-friendly, unique, e.g. "db:postgres"
 	Label() string // user-friendly, e.g. "PostgreSQL Adapter (pgx/sqlc)"

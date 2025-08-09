@@ -50,7 +50,7 @@ func renderString(tmpl string, data any) (string, error) {
 	return strings.ReplaceAll(buf.String(), "\r\n", "\n"), nil
 }
 
-// applyPathTokens replaces path tokens like __name__ and __module__ using ctx values.
+// applyPathTokens replaces path tokens like __name__ and __module__ using context values.
 func applyPathTokens(path string, ctx any) string {
 	name := getCtxString(ctx, "Name")
 	module := getCtxString(ctx, "Module")
