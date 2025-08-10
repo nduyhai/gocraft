@@ -4,6 +4,7 @@ import (
 	dockerfilemodule "github.com/nduyhai/gocraft/internal/adapters/outbound/modules/feature/dockerfile"
 	gitignoremodule "github.com/nduyhai/gocraft/internal/adapters/outbound/modules/feature/gitignore"
 	"github.com/nduyhai/gocraft/internal/adapters/outbound/modules/feature/makefile"
+	grpcservermodule "github.com/nduyhai/gocraft/internal/adapters/outbound/modules/grpc/server"
 	chimodule "github.com/nduyhai/gocraft/internal/adapters/outbound/modules/http/chi"
 	ginmodule "github.com/nduyhai/gocraft/internal/adapters/outbound/modules/http/gin"
 	"github.com/nduyhai/gocraft/internal/adapters/outbound/modules/platform/base"
@@ -22,6 +23,8 @@ func Builtins(r ports.Registry) {
 	// HTTP server modules
 	r.Register(ginmodule.New())
 	r.Register(chimodule.New())
+	// gRPC server module
+	r.Register(grpcservermodule.New())
 	// Feature modules
 	r.Register(gitignoremodule.New())
 	r.Register(makefile.New())
