@@ -3,11 +3,12 @@ package cli
 import (
 	"os"
 
+	"github.com/nduyhai/gocraft/internal/core/ports"
 	"github.com/nduyhai/gocraft/pkg/version"
 	"github.com/spf13/cobra"
 )
 
-func NewRootCmd() *cobra.Command {
+func NewRootCmd(reg ports.Registry) *cobra.Command {
 	cmd := &cobra.Command{
 		Use:   "gocraft",
 		Short: "Project generator following clean architecture",
@@ -19,13 +20,15 @@ func NewRootCmd() *cobra.Command {
 
 	cmd.Version = version.Version
 
-	cmd.AddCommand(newNewCmd())
-	cmd.AddCommand(newListCmd())
-	cmd.AddCommand(newAddCmd())
+	cmd.AddCommand(newNewCmd(reg))
+	cmd.AddCommand(newListCmd(reg))
+	cmd.AddCommand(newAddCmd(reg))
 	cmd.AddCommand(newCompletionCmd())
 
 	cmd.SilenceUsage = true
 	cmd.SilenceErrors = true
+
+	cmd.PersistentFlags().BoolP("verbose", "v", false, "Enable verbose logging")
 
 	cmd.SetErrPrefix("error: ")
 	cmd.SetOut(os.Stdout)

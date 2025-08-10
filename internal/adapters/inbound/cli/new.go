@@ -9,14 +9,13 @@ import (
 	amfileeditor "github.com/nduyhai/gocraft/internal/adapters/outbound/editors/adaptersmodule/fileeditor"
 	"github.com/nduyhai/gocraft/internal/adapters/outbound/fs/oswriter"
 	gomodfileeditor "github.com/nduyhai/gocraft/internal/adapters/outbound/gomod/fileeditor"
-	"github.com/nduyhai/gocraft/internal/adapters/outbound/modules/register"
-	"github.com/nduyhai/gocraft/internal/adapters/outbound/registry/embed_registry"
 	"github.com/nduyhai/gocraft/internal/adapters/outbound/rendering/texttmpl"
+	"github.com/nduyhai/gocraft/internal/core/ports"
 	"github.com/nduyhai/gocraft/internal/core/usecase"
 	"github.com/spf13/cobra"
 )
 
-func newNewCmd() *cobra.Command {
+func newNewCmd(reg ports.Registry) *cobra.Command {
 	var (
 		module string
 		with   []string
@@ -50,12 +49,8 @@ func newNewCmd() *cobra.Command {
 				map[string]any{"Name": name, "Module": module},
 			)
 
-			// Build registry and register built-ins
-			r := embed_registry.New()
-			register.Builtins(r)
-
-			// Use usecase to apply module(s)
-			uc := usecase.ApplyModules{Registry: r}
+			// Use usecase to apply module(s) with injected registry
+			uc := usecase.ApplyModules{Registry: reg}
 			mods := append([]string{"platform:base"}, with...)
 			if err := uc.Execute(ctx, mods...); err != nil {
 				return err

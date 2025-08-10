@@ -6,23 +6,18 @@ import (
 	"strings"
 	"text/tabwriter"
 
-	"github.com/nduyhai/gocraft/internal/adapters/outbound/modules/register"
-	"github.com/nduyhai/gocraft/internal/adapters/outbound/registry/embed_registry"
+	"github.com/nduyhai/gocraft/internal/core/ports"
 	"github.com/nduyhai/gocraft/internal/core/usecase"
 	"github.com/spf13/cobra"
 )
 
-func newListCmd() *cobra.Command {
+func newListCmd(reg ports.Registry) *cobra.Command {
 	cmd := &cobra.Command{
 		Use:   "list",
 		Short: "List available modules",
 		RunE: func(cmd *cobra.Command, args []string) error {
-			// Build a registry and register built-in modules
-			r := embed_registry.New()
-			register.Builtins(r)
-
-			// Use usecase to list modules
-			uc := usecase.ListModules{Registry: r}
+			// Use the injected registry to list modules
+			uc := usecase.ListModules{Registry: reg}
 			mods := uc.Execute()
 			if len(mods) == 0 {
 				_, _ = fmt.Fprintln(cmd.OutOrStdout(), "No modules available")

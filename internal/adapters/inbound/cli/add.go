@@ -12,15 +12,14 @@ import (
 	amfileeditor "github.com/nduyhai/gocraft/internal/adapters/outbound/editors/adaptersmodule/fileeditor"
 	"github.com/nduyhai/gocraft/internal/adapters/outbound/fs/oswriter"
 	gomodfileeditor "github.com/nduyhai/gocraft/internal/adapters/outbound/gomod/fileeditor"
-	"github.com/nduyhai/gocraft/internal/adapters/outbound/modules/register"
-	"github.com/nduyhai/gocraft/internal/adapters/outbound/registry/embed_registry"
 	"github.com/nduyhai/gocraft/internal/adapters/outbound/rendering/texttmpl"
+	"github.com/nduyhai/gocraft/internal/core/ports"
 	"github.com/nduyhai/gocraft/internal/core/usecase"
 	"github.com/spf13/cobra"
 )
 
 // newAddCmd creates the `add` command which applies one or more modules to the current project directory.
-func newAddCmd() *cobra.Command {
+func newAddCmd(reg ports.Registry) *cobra.Command {
 	cmd := &cobra.Command{
 		Use:   "add <module>...",
 		Short: "Apply module(s) to the current project",
@@ -51,12 +50,8 @@ func newAddCmd() *cobra.Command {
 				"Module": modulePath,
 			})
 
-			// Registry and built-ins
-			r := embed_registry.New()
-			register.Builtins(r)
-
-			// Use usecase to apply modules
-			uc := usecase.ApplyModules{Registry: r}
+			// Use usecase to apply modules with injected registry
+			uc := usecase.ApplyModules{Registry: reg}
 			if err := uc.Execute(ctx, args...); err != nil {
 				return err
 			}
