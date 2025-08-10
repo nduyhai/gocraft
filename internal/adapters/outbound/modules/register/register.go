@@ -1,6 +1,7 @@
 package register
 
 import (
+	gormmodule "github.com/nduyhai/gocraft/internal/adapters/outbound/modules/db/gorm"
 	dockerfilemodule "github.com/nduyhai/gocraft/internal/adapters/outbound/modules/feature/dockerfile"
 	gitignoremodule "github.com/nduyhai/gocraft/internal/adapters/outbound/modules/feature/gitignore"
 	"github.com/nduyhai/gocraft/internal/adapters/outbound/modules/feature/makefile"
@@ -25,6 +26,8 @@ func Builtins(r ports.Registry) {
 	r.Register(chimodule.New())
 	// gRPC server module
 	r.Register(grpcservermodule.New())
+	// Database modules
+	r.Register(gormmodule.New())
 	// Feature modules
 	r.Register(gitignoremodule.New())
 	r.Register(makefile.New())

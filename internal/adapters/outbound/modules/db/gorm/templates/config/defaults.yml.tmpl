@@ -1,0 +1,7 @@
+gorm:
+  driver: sqlite  # postgres | mysql | sqlite
+  dsn: "file:app.db?_pragma=busy_timeout=5000&_pragma=journal_mode=WAL"
+  log_level: "warn"   # silent|error|warn|info
+  max_open_conns: 25
+  max_idle_conns: 5
+  conn_max_lifetime: 30m
