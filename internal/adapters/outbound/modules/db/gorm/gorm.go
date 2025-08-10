@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"io/fs"
 	"os"
+	"strings"
 
 	"github.com/nduyhai/gocraft/internal/core/ports"
 	"gopkg.in/yaml.v3"
@@ -40,12 +41,28 @@ func (Module) Applies(ctx ports.Ctx) bool { return true }
 func (Module) Apply(ctx ports.Ctx) error {
 	// Try to add required dependencies if a GoMod editor is available
 	if gm := ctx.GoMod(); gm != nil {
+		// Always add core gorm and infra libs
 		_ = gm.Add("gorm.io/gorm", "v1.25.7-0.20240204074919-46816ad31dde")
-		_ = gm.Add("gorm.io/driver/postgres", "v1.5.7")
-		_ = gm.Add("gorm.io/driver/mysql", "v1.5.6")
-		_ = gm.Add("gorm.io/driver/sqlite", "v1.5.7")
 		_ = gm.Add("github.com/spf13/viper", "v1.20.1")
 		_ = gm.Add("go.uber.org/fx", "v1.24.0")
+
+		// Add only the chosen SQL driver based on config/DSN
+		drv := strings.ToLower(strings.TrimSpace(nestedString(ctx.Values(), []string{"gorm", "driver"})))
+		if drv == "" {
+			dsn := nestedString(ctx.Values(), []string{"gorm", "dsn"})
+			drv = driverFromDSN(dsn)
+		}
+		if drv == "" {
+			drv = "sqlite"
+		}
+		switch drv {
+		case "postgres", "pg", "postgre", "postgresql":
+			_ = gm.Add("gorm.io/driver/postgres", "v1.5.7")
+		case "mysql":
+			_ = gm.Add("gorm.io/driver/mysql", "v1.5.6")
+		default: // sqlite
+			_ = gm.Add("gorm.io/driver/sqlite", "v1.5.7")
+		}
 	}
 
 	// Render templates from embedded FS
@@ -93,9 +110,16 @@ func (Module) Apply(ctx ports.Ctx) error {
 	}
 
 	// Respect --set gorm.driver=... by updating config/config.yml if provided.
-	if drv := nestedString(ctx.Values(), []string{"gorm", "driver"}); drv != "" {
-		if err := ensureGormDriverInConfig(ctx.ProjectRoot(), drv); err != nil {
-			// non-fatal; keep going
+	drv := nestedString(ctx.Values(), []string{"gorm", "driver"})
+	if drv != "" {
+		_ = ensureGormDriverInConfig(ctx.ProjectRoot(), drv)
+	} else {
+		// If no driver but DSN present, infer and set it in config
+		dsn := nestedString(ctx.Values(), []string{"gorm", "dsn"})
+		if dsn != "" {
+			if inf := driverFromDSN(dsn); inf != "" {
+				_ = ensureGormDriverInConfig(ctx.ProjectRoot(), inf)
+			}
 		}
 	}
 	return nil
@@ -112,16 +136,12 @@ func (Module) Defaults() map[string]any {
 	}
 	return map[string]any{
 		"gorm": map[string]any{
-			"driver": "sqlite",
-			"postgres": map[string]any{
-				"dsn": "postgres://user:pass@localhost:5432/app?sslmode=disable",
-			},
-			"mysql": map[string]any{
-				"dsn": "user:pass@tcp(localhost:3306)/app?parseTime=true",
-			},
-			"sqlite": map[string]any{
-				"path": "file:app.db?_pragma=busy_timeout=5000&_pragma=journal_mode=WAL",
-			},
+			"driver":            "sqlite",
+			"dsn":               "file:app.db?_pragma=busy_timeout=5000&_pragma=journal_mode=WAL",
+			"log_level":         "warn",
+			"max_open_conns":    25,
+			"max_idle_conns":    5,
+			"conn_max_lifetime": "30m",
 		},
 	}
 }
@@ -188,4 +208,34 @@ func setPath(m map[string]any, path []string, value any) {
 		}
 		cur = nm
 	}
+}
+
+// driverFromDSN attempts to infer the DB driver from a DSN string.
+// Returns one of: "postgres", "mysql", "sqlite"; empty string if unknown.
+func driverFromDSN(dsn string) string {
+	dsn = strings.TrimSpace(strings.ToLower(dsn))
+	if dsn == "" {
+		return ""
+	}
+	// Postgres: URI schemes or keyword DSN (host= user= dbname= sslmode=)
+	if strings.HasPrefix(dsn, "postgres://") || strings.HasPrefix(dsn, "postgresql://") || strings.HasPrefix(dsn, "pgx://") ||
+		(strings.Contains(dsn, "host=") && (strings.Contains(dsn, "dbname=") || strings.Contains(dsn, "user="))) {
+		return "postgres"
+	}
+	// MySQL: URI scheme or classic DSN like user:pass@tcp(host:port)/db?...
+	if strings.HasPrefix(dsn, "mysql://") || strings.Contains(dsn, "@tcp(") || strings.Contains(dsn, ")/") {
+		// Heuristic: if it looks like user:pass@tcp(host:port)/db...
+		if strings.Contains(dsn, "@tcp(") && strings.Contains(dsn, ")/") {
+			return "mysql"
+		}
+		// mysql:// scheme
+		if strings.HasPrefix(dsn, "mysql://") {
+			return "mysql"
+		}
+	}
+	// SQLite: file: URIs, :memory:, or *.db path
+	if strings.HasPrefix(dsn, "file:") || strings.HasSuffix(dsn, ".db") || strings.HasPrefix(dsn, ":memory:") {
+		return "sqlite"
+	}
+	return ""
 }

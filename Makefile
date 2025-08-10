@@ -74,9 +74,6 @@ goimports:
 verify:
 	$(GOMOD) verify
 
-
-
-
 run:
 	$(GOCMD) run $(MAIN_PACKAGE)
 

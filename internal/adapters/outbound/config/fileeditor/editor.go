@@ -123,10 +123,12 @@ func defaultsFor(module string) map[string]any {
 		}
 		return map[string]any{
 			"gorm": map[string]any{
-				"driver":   "sqlite",
-				"postgres": map[string]any{"dsn": "postgres://user:pass@localhost:5432/app?sslmode=disable"},
-				"mysql":    map[string]any{"dsn": "user:pass@tcp(localhost:3306)/app?parseTime=true"},
-				"sqlite":   map[string]any{"path": "file:app.db?_pragma=busy_timeout=5000&_pragma=journal_mode=WAL"},
+				"driver":            "sqlite",
+				"dsn":               "file:app.db?_pragma=busy_timeout=5000&_pragma=journal_mode=WAL",
+				"log_level":         "warn",
+				"max_open_conns":    25,
+				"max_idle_conns":    5,
+				"conn_max_lifetime": "30m",
 			},
 		}
 	default:

@@ -43,6 +43,7 @@ gocraft new myapp -m github.com/you/myapp --with grpc:server
 
 ```
 gocraft new example -m github.com/nduyhai/example --with grpc:server --with http:gin --with feature:makefile --with feature:gitignore --with feature:dockerfile
+gocraft new example -m github.com/nduyhai/example --with grpc:server --with http:gin --with feature:makefile --with feature:gitignore --with feature:dockerfile --with db:gorm --set gorm.driver=mysql
 gocraft new myapp -m github.com/you/myapp --with http:chi  --with http:gin
 ```
 
