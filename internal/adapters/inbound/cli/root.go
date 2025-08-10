@@ -24,6 +24,7 @@ func NewRootCmd(reg ports.Registry) *cobra.Command {
 	cmd.AddCommand(newListCmd(reg))
 	cmd.AddCommand(newAddCmd(reg))
 	cmd.AddCommand(newCompletionCmd())
+	cmd.AddCommand(newVersionCmd())
 
 	cmd.SilenceUsage = true
 	cmd.SilenceErrors = true
