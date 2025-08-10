@@ -32,85 +32,89 @@ import (
 // ENV overrides supported by Viper via GORM_DRIVER, GORM_DSN, etc., because viper is configured
 // to map dots to underscores. We also set the replacer here for safety.
 func Module() fx.Option {
-	return fx.Provide(func() (*gorm.DB, error) {
-		v := viper.New()
-		v.SetConfigName("config")
-		v.SetConfigType("yaml")
-		v.AddConfigPath("config")
-		_ = v.ReadInConfig()
-		v.AutomaticEnv()
-		v.SetEnvKeyReplacer(strings.NewReplacer(".", "_"))
+	return fx.Options(
+		fx.Provide(func() (*gorm.DB, error) {
+			v := viper.New()
+			v.SetConfigName("config")
+			v.SetConfigType("yaml")
+			v.AddConfigPath("config")
+			_ = v.ReadInConfig()
+			v.AutomaticEnv()
+			v.SetEnvKeyReplacer(strings.NewReplacer(".", "_"))
 
-		driver := v.GetString("gorm.driver")
-		if driver == "" {
-			// default to the selected driver at generation time
+			driver := v.GetString("gorm.driver")
+			if driver == "" {
+				// default to the selected driver at generation time
+				{{- if and $g (or (eq (lower (index $g "driver")) "postgres") (eq (lower (index $g "driver")) "pg") (eq (lower (index $g "driver")) "postgresql") (eq (lower (index $g "driver")) "postgre")) }}
+				driver = "postgres"
+				{{- else if and $g (eq (lower (index $g "driver")) "mysql") }}
+				driver = "mysql"
+				{{- else }}
+				driver = "sqlite"
+				{{- end }}
+			}
+			dsn := v.GetString("gorm.dsn")
+
+			// Logger level
+			lvlStr := strings.ToLower(v.GetString("gorm.log_level"))
+			var lvl logger.LogLevel
+			switch lvlStr {
+			case "silent":
+				lvl = logger.Silent
+			case "error":
+				lvl = logger.Error
+			case "info":
+				lvl = logger.Info
+			default:
+				lvl = logger.Warn
+			}
+			gcfg := &gorm.Config{Logger: logger.Default.LogMode(lvl)}
+
+			var (
+				db  *gorm.DB
+				err error
+			)
 			{{- if and $g (or (eq (lower (index $g "driver")) "postgres") (eq (lower (index $g "driver")) "pg") (eq (lower (index $g "driver")) "postgresql") (eq (lower (index $g "driver")) "postgre")) }}
-			driver = "postgres"
+			if dsn == "" {
+				// example DSN for postgres
+				dsn = "host=localhost port=5432 user=postgres password=postgres dbname=appdb sslmode=disable"
+			}
+			db, err = gorm.Open(postgres.Open(dsn), gcfg)
 			{{- else if and $g (eq (lower (index $g "driver")) "mysql") }}
-			driver = "mysql"
+			if dsn == "" {
+				// example DSN for mysql
+				dsn = "user:password@tcp(localhost:3306)/appdb?parseTime=true&loc=Local"
+			}
+			db, err = gorm.Open(mysql.Open(dsn), gcfg)
 			{{- else }}
-			driver = "sqlite"
+			if dsn == "" {
+				// example DSN for sqlite
+				dsn = "file:app.db?_pragma=busy_timeout=5000&_pragma=journal_mode=WAL"
+			}
+			db, err = gorm.Open(sqlite.Open(dsn), gcfg)
 			{{- end }}
-		}
-		dsn := v.GetString("gorm.dsn")
-
-		// Logger level
-		lvlStr := strings.ToLower(v.GetString("gorm.log_level"))
-		var lvl logger.LogLevel
-		switch lvlStr {
-		case "silent":
-			lvl = logger.Silent
-		case "error":
-			lvl = logger.Error
-		case "info":
-			lvl = logger.Info
-		default:
-			lvl = logger.Warn
-		}
-		gcfg := &gorm.Config{Logger: logger.Default.LogMode(lvl)}
-
-		var (
-			db  *gorm.DB
-			err error
-		)
-		{{- if and $g (or (eq (lower (index $g "driver")) "postgres") (eq (lower (index $g "driver")) "pg") (eq (lower (index $g "driver")) "postgresql") (eq (lower (index $g "driver")) "postgre")) }}
-		if dsn == "" {
-			// example DSN for postgres
-			dsn = "host=localhost port=5432 user=postgres password=postgres dbname=appdb sslmode=disable"
-		}
-		db, err = gorm.Open(postgres.Open(dsn), gcfg)
-		{{- else if and $g (eq (lower (index $g "driver")) "mysql") }}
-		if dsn == "" {
-			// example DSN for mysql
-			dsn = "user:password@tcp(localhost:3306)/appdb?parseTime=true&loc=Local"
-		}
-		db, err = gorm.Open(mysql.Open(dsn), gcfg)
-		{{- else }}
-		if dsn == "" {
-			// example DSN for sqlite
-			dsn = "file:app.db?_pragma=busy_timeout=5000&_pragma=journal_mode=WAL"
-		}
-		db, err = gorm.Open(sqlite.Open(dsn), gcfg)
-		{{- end }}
-		if err != nil {
-			return nil, err
-		}
-
-		// Connection pool settings
-		sqlDB, err := db.DB()
-		if err == nil {
-			if n := v.GetInt("gorm.max_open_conns"); n > 0 {
-				sqlDB.SetMaxOpenConns(n)
+			if err != nil {
+				return nil, err
 			}
-			if n := v.GetInt("gorm.max_idle_conns"); n > 0 {
-				sqlDB.SetMaxIdleConns(n)
-			}
-			if s := v.GetString("gorm.conn_max_lifetime"); s != "" {
-				if d, perr := time.ParseDuration(s); perr == nil {
-					sqlDB.SetConnMaxLifetime(d)
+
+			// Connection pool settings
+			sqlDB, err := db.DB()
+			if err == nil {
+				if n := v.GetInt("gorm.max_open_conns"); n > 0 {
+					sqlDB.SetMaxOpenConns(n)
+				}
+				if n := v.GetInt("gorm.max_idle_conns"); n > 0 {
+					sqlDB.SetMaxIdleConns(n)
+				}
+				if s := v.GetString("gorm.conn_max_lifetime"); s != "" {
+					if d, perr := time.ParseDuration(s); perr == nil {
+						sqlDB.SetConnMaxLifetime(d)
+					}
 				}
 			}
-		}
-		return db, nil
-	})
+			return db, nil
+		}),
+		// Ensure *gorm.DB is constructed at startup even if nothing depends on it yet
+		fx.Invoke(func(db *gorm.DB) {}),
+	)
 }
