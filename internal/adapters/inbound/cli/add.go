@@ -21,6 +21,7 @@ import (
 
 // newAddCmd creates the `add` command which applies one or more modules to the current project directory.
 func newAddCmd(reg ports.Registry) *cobra.Command {
+	var set []string
 	cmd := &cobra.Command{
 		Use:   "add <module>...",
 		Short: "Apply module(s) to the current project",
@@ -47,10 +48,14 @@ func newAddCmd(reg ports.Registry) *cobra.Command {
 			cfgEditor := configfileeditor.New(cwd)
 
 			// Build context
-			ctx := contextimpl.New(cwd, writer, renderer, gomod, adaptersEditor, cfgEditor, map[string]any{
+			vals := map[string]any{
 				"Name":   name,
 				"Module": modulePath,
-			})
+			}
+			if len(set) > 0 {
+				mergeSetsInto(vals, set)
+			}
+			ctx := contextimpl.New(cwd, writer, renderer, gomod, adaptersEditor, cfgEditor, vals)
 
 			// Use usecase to apply modules with injected registry
 			uc := usecase.ApplyModules{Registry: reg}
@@ -61,6 +66,7 @@ func newAddCmd(reg ports.Registry) *cobra.Command {
 			return nil
 		},
 	}
+	cmd.Flags().StringSliceVar(&set, "set", nil, "Set template values (key=value). Supports dot paths, e.g., --set gorm.driver=postgres")
 	return cmd
 }
 

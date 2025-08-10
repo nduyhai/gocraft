@@ -6,6 +6,7 @@ import (
 	"os"
 	"path/filepath"
 
+	gormmodule "github.com/nduyhai/gocraft/internal/adapters/outbound/modules/db/gorm"
 	grpcservermodule "github.com/nduyhai/gocraft/internal/adapters/outbound/modules/grpc/server"
 	chimodule "github.com/nduyhai/gocraft/internal/adapters/outbound/modules/http/chi"
 	ginmodule "github.com/nduyhai/gocraft/internal/adapters/outbound/modules/http/gin"
@@ -114,6 +115,18 @@ func defaultsFor(module string) map[string]any {
 					"addr":       ":9090",
 					"reflection": true,
 				},
+			},
+		}
+	case "db:gorm":
+		if m := loadDefaultsFromFS(gormmodule.TemplatesFS); m != nil {
+			return m
+		}
+		return map[string]any{
+			"gorm": map[string]any{
+				"driver":   "sqlite",
+				"postgres": map[string]any{"dsn": "postgres://user:pass@localhost:5432/app?sslmode=disable"},
+				"mysql":    map[string]any{"dsn": "user:pass@tcp(localhost:3306)/app?parseTime=true"},
+				"sqlite":   map[string]any{"path": "file:app.db?_pragma=busy_timeout=5000&_pragma=journal_mode=WAL"},
 			},
 		}
 	default:

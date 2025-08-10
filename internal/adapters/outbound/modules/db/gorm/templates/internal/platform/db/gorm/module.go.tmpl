@@ -1,0 +1,59 @@
+package gormdb
+
+import (
+	"strings"
+
+	"github.com/spf13/viper"
+	"go.uber.org/fx"
+	"gorm.io/driver/mysql"
+	"gorm.io/driver/postgres"
+	"gorm.io/driver/sqlite"
+	"gorm.io/gorm"
+)
+
+// Module provides *gorm.DB via Fx. It reads configuration from Viper with ENV overrides.
+//
+// Config layout (also see config/defaults.yml):
+// gorm:
+//   driver: sqlite | postgres | mysql
+//   postgres:
+//     dsn: postgres://user:pass@localhost:5432/app?sslmode=disable
+//   mysql:
+//     dsn: user:pass@tcp(localhost:3306)/app?parseTime=true
+//   sqlite:
+//     path: file:app.db?_pragma=busy_timeout=5000&_pragma=journal_mode=WAL
+//
+// ENV overrides supported by Viper via APP_GORM_DRIVER, etc., because viper is configured
+// to map dots to underscores (see platform/env module). If not, we set it here too.
+func Module() fx.Option {
+	return fx.Provide(func() (*gorm.DB, error) {
+		v := viper.New()
+		v.SetConfigName("config")
+		v.SetConfigType("yaml")
+		v.AddConfigPath("config")
+		_ = v.ReadInConfig()
+		v.AutomaticEnv()
+		v.SetEnvKeyReplacer(strings.NewReplacer(".", "_"))
+
+		driver := v.GetString("gorm.driver")
+		if driver == "" {
+			driver = "sqlite"
+		}
+		switch driver {
+		case "postgres", "pg", "postgre":
+			dsn := v.GetString("gorm.postgres.dsn")
+			return gorm.Open(postgres.Open(dsn), &gorm.Config{})
+		case "mysql":
+			dsn := v.GetString("gorm.mysql.dsn")
+			return gorm.Open(mysql.Open(dsn), &gorm.Config{})
+		case "sqlite":
+			fallthrough
+		default:
+			path := v.GetString("gorm.sqlite.path")
+			if path == "" {
+				path = "file:app.db?_pragma=busy_timeout=5000&_pragma=journal_mode=WAL"
+			}
+			return gorm.Open(sqlite.Open(path), &gorm.Config{})
+		}
+	})
+}

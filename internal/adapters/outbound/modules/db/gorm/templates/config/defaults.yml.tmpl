@@ -1,0 +1,8 @@
+gorm:
+  driver: sqlite
+  postgres:
+    dsn: "postgres://user:pass@localhost:5432/app?sslmode=disable"
+  mysql:
+    dsn: "user:pass@tcp(localhost:3306)/app?parseTime=true"
+  sqlite:
+    path: "file:app.db?_pragma=busy_timeout=5000&_pragma=journal_mode=WAL"
