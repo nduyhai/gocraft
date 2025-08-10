@@ -39,6 +39,13 @@ gocraft new myapp -m github.com/you/myapp --with grpc:server
 
 ```
 
+### Create a full project
+
+```
+gocraft new example -m github.com/nduyhai/example --with grpc:server --with http:gin --with feature:makefile --with feature:gitignore --with feature:dockerfile
+
+```
+
 Then optionally initialize git and tidy dependencies automatically.
 
 ## Structure
