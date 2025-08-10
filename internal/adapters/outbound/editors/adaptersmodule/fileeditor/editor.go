@@ -1,19 +1,23 @@
 package fileeditor
 
 import (
-	"bufio"
 	"bytes"
 	"fmt"
+	"go/ast"
+	"go/parser"
+	"go/printer"
+	"go/token"
 	"os"
 	"path/filepath"
 	"strings"
 
 	"github.com/nduyhai/gocraft/internal/core/ports"
+	"golang.org/x/tools/imports"
 )
 
 // Editor implements ports.AdaptersModuleEditor by editing
-// <root>/internal/platform/di/root.go in-place using robust string operations.
-// All operations are idempotent.
+// <root>/internal/platform/di/root.go using AST and goimports.
+// All operations are idempotent and tolerate missing files.
 
 type Editor struct{ root string }
 
@@ -23,105 +27,122 @@ func (e *Editor) Ensure(alias, importPath, optionExpr string) error {
 	if alias == "" || importPath == "" || optionExpr == "" {
 		return fmt.Errorf("invalid ensure args: alias/importPath/optionExpr must be non-empty")
 	}
-	// Update DI root: internal/platform/di/root.go if present.
-	// Update DI root: internal/platform/di/root.go if present.
-	err := e.ensureInFile(
+	return e.ensureInFile(
 		filepath.Join(e.root, "internal", "platform", "di", "root.go"),
-		"package di\n",
 		alias, importPath, optionExpr,
 	)
-	return err
 }
 
-// ensureInFile ensures an import alias/path and fx option expression exist in the given file.
-// pkgLine is the exact "package <name>\n" line used as a fallback anchor when no import block exists.
-func (e *Editor) ensureInFile(filePath, pkgLine, alias, importPath, optionExpr string) error {
+// ensureInFile ensures an import alias/path and fx option expression exist in the given file using AST.
+func (e *Editor) ensureInFile(filePath, alias, importPath, optionExpr string) error {
 	b, err := os.ReadFile(filePath)
 	if err != nil {
-		// If the file doesn't exist, do nothing (idempotent behavior for varying templates).
+		// Missing file: treat as no-op.
 		return nil
 	}
-	content := string(b)
 
-	importLine := fmt.Sprintf("\t%s \"%s\"", alias, importPath)
-
-	// Ensure import exists
-	if !strings.Contains(content, importLine) {
-		if strings.Contains(content, "import (") {
-			// insert before first closing parenthesis of the import block
-			scanner := bufio.NewScanner(bytes.NewReader([]byte(content)))
-			var buf bytes.Buffer
-			inserted := false
-			for scanner.Scan() {
-				line := scanner.Text()
-				if strings.TrimSpace(line) == ")" && !inserted {
-					buf.WriteString(importLine + "\n")
-					inserted = true
-				}
-				buf.WriteString(line + "\n")
-			}
-			if err := scanner.Err(); err != nil {
-				return err
-			}
-			content = buf.String()
-		} else if strings.Contains(content, "import \"") {
-			// convert single import to block containing both existing and new
-			scanner := bufio.NewScanner(bytes.NewReader([]byte(content)))
-			var buf bytes.Buffer
-			converted := false
-			for scanner.Scan() {
-				line := scanner.Text()
-				trim := strings.TrimSpace(line)
-				if strings.HasPrefix(trim, "import \"") && !converted {
-					start := strings.Index(line, "\"")
-					end := strings.LastIndex(line, "\"")
-					existing := ""
-					if start >= 0 && end > start {
-						existing = line[start : end+1]
-					}
-					buf.WriteString("import (\n\t" + existing + "\n" + importLine + "\n)\n")
-					converted = true
-				} else {
-					buf.WriteString(line + "\n")
-				}
-			}
-			if err := scanner.Err(); err != nil {
-				return err
-			}
-			content = buf.String()
-		} else {
-			// no import block; add after package line
-			content = strings.Replace(content, pkgLine, pkgLine+"\nimport (\n"+importLine+"\n)\n\n", 1)
-		}
+	fset := token.NewFileSet()
+	f, err := parser.ParseFile(fset, filePath, b, parser.ParseComments)
+	if err != nil {
+		// If parsing fails, do not modify (avoid corruption); surface error to caller
+		return err
 	}
 
-	// Ensure fx.Option reference exists by inserting before the closing ')' of return fx.Options(
-	if !strings.Contains(content, optionExpr) {
-		blockStart := strings.Index(content, "return fx.Options(")
-		if blockStart >= 0 {
-			s := content[blockStart:]
-			open := 0
-			idx := -1
-			for i, ch := range s {
-				if ch == '(' {
-					open++
-				}
-				if ch == ')' {
-					open--
-					if open == 0 {
-						idx = i
-						break
-					}
-				}
+	// Ensure import exists with alias
+	ensureImport := func() {
+		for _, imp := range f.Imports {
+			pathVal := strings.Trim(imp.Path.Value, "\"")
+			name := ""
+			if imp.Name != nil {
+				name = imp.Name.Name
 			}
-			if idx > 0 {
-				insertAt := blockStart + idx
-				content = content[:insertAt] + "\n\t\t" + optionExpr + "," + content[insertAt:]
+			if pathVal == importPath && name == alias {
+				return // already present
 			}
 		}
+		// Not present: add
+		imp := &ast.ImportSpec{
+			Name: &ast.Ident{Name: alias},
+			Path: &ast.BasicLit{Kind: token.STRING, Value: fmt.Sprintf("\"%s\"", importPath)},
+		}
+		// Create or find import decl
+		var gen *ast.GenDecl
+		for _, d := range f.Decls {
+			if gd, ok := d.(*ast.GenDecl); ok && gd.Tok == token.IMPORT {
+				gen = gd
+				break
+			}
+		}
+		if gen == nil {
+			gen = &ast.GenDecl{Tok: token.IMPORT, Lparen: token.NoPos, Rparen: token.NoPos}
+			f.Decls = append([]ast.Decl{gen}, f.Decls...)
+		}
+		gen.Specs = append(gen.Specs, imp)
+		if gen.Lparen == token.NoPos && len(gen.Specs) > 1 {
+			// ensure it's a block import
+			gen.Lparen = token.Pos(1)
+			gen.Rparen = token.Pos(1)
+		}
+	}
+	ensureImport()
+
+	// Ensure optionExpr exists inside return fx.Options(...)
+	exprToAdd, err := parser.ParseExpr(optionExpr)
+	if err != nil {
+		return fmt.Errorf("invalid optionExpr: %w", err)
 	}
 
-	return os.WriteFile(filePath, []byte(content), 0o644)
+	foundAndEnsured := false
+	ast.Inspect(f, func(n ast.Node) bool {
+		ret, ok := n.(*ast.ReturnStmt)
+		if !ok {
+			return true
+		}
+		for _, res := range ret.Results {
+			call, ok := res.(*ast.CallExpr)
+			if !ok {
+				continue
+			}
+			sel, ok := call.Fun.(*ast.SelectorExpr)
+			if !ok || sel.Sel == nil || sel.Sel.Name != "Options" {
+				continue
+			}
+			// naive check: qualifier exists (fx). We don't enforce package name here.
+			// ensure not duplicate
+			var buf bytes.Buffer
+			_ = printer.Fprint(&buf, fset, exprToAdd)
+			needle := buf.String()
+			already := false
+			for _, a := range call.Args {
+				buf.Reset()
+				_ = printer.Fprint(&buf, fset, a)
+				if buf.String() == needle {
+					already = true
+					break
+				}
+			}
+			if !already {
+				call.Args = append(call.Args, exprToAdd)
+			}
+			foundAndEnsured = true
+			return false
+		}
+		return true
+	})
+	// If not found, do nothing (idempotent across templates)
+	_ = foundAndEnsured
+
+	// Print and run goimports
+	var out bytes.Buffer
+	if err := printer.Fprint(&out, fset, f); err != nil {
+		return err
+	}
+	processed, err := imports.Process(filePath, out.Bytes(), &imports.Options{Comments: true, TabWidth: 8, Fragment: false})
+	if err != nil {
+		// Even if imports fails, write the printer output to avoid losing changes
+		processed = out.Bytes()
+	}
+	return os.WriteFile(filePath, processed, 0o644)
 }
 
 var _ ports.AdaptersModuleEditor = (*Editor)(nil)

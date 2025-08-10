@@ -2,7 +2,7 @@ package ports
 
 // Template represents a named template repository entry that can be rendered.
 type Template struct {
-	Name  string   // template name (e.g., "basic")
+	Name  string // template name (e.g., "basic")
 	Files []TmplFile
 }
 
