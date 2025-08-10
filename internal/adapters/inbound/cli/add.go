@@ -9,7 +9,7 @@ import (
 	"strings"
 
 	"github.com/nduyhai/gocraft/internal/adapters/outbound/context/contextimpl"
-	amfileeditor "github.com/nduyhai/gocraft/internal/adapters/outbound/editors/adaptersmodule/fileeditor"
+	amfileeditor "github.com/nduyhai/gocraft/internal/adapters/outbound/di/fileeditor"
 	"github.com/nduyhai/gocraft/internal/adapters/outbound/fs/oswriter"
 	gomodfileeditor "github.com/nduyhai/gocraft/internal/adapters/outbound/gomod/fileeditor"
 	"github.com/nduyhai/gocraft/internal/adapters/outbound/rendering/texttmpl"

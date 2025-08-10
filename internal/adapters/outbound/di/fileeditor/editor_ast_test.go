@@ -6,7 +6,7 @@ import (
 	"strings"
 	"testing"
 
-	amedit "github.com/nduyhai/gocraft/internal/adapters/outbound/editors/adaptersmodule/fileeditor"
+	amedit "github.com/nduyhai/gocraft/internal/adapters/outbound/di/fileeditor"
 )
 
 func write(t *testing.T, path, content string) {

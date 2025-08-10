@@ -9,12 +9,12 @@ type Ctx struct {
 	fs             ports.FSWriter
 	renderer       ports.Renderer
 	gomod          ports.GoModEditor
-	adaptersModule ports.AdaptersModuleEditor
+	adaptersModule ports.DependencyInjectionEditor
 }
 
 // New constructs a new Ctx.
 // values may be nil; an internal map will be allocated.
-func New(projectRoot string, fs ports.FSWriter, renderer ports.Renderer, gomod ports.GoModEditor, adapters ports.AdaptersModuleEditor, values map[string]any) *Ctx {
+func New(projectRoot string, fs ports.FSWriter, renderer ports.Renderer, gomod ports.GoModEditor, adapters ports.DependencyInjectionEditor, values map[string]any) *Ctx {
 	if values == nil {
 		values = make(map[string]any)
 	}
@@ -47,4 +47,4 @@ func (c *Ctx) Renderer() ports.Renderer { return c.renderer }
 func (c *Ctx) GoMod() ports.GoModEditor { return c.gomod }
 
 // AdaptersModule returns the adapters module file editor.
-func (c *Ctx) AdaptersModule() ports.AdaptersModuleEditor { return c.adaptersModule }
+func (c *Ctx) AdaptersModule() ports.DependencyInjectionEditor { return c.adaptersModule }

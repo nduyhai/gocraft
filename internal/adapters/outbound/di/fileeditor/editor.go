@@ -15,7 +15,7 @@ import (
 	"golang.org/x/tools/imports"
 )
 
-// Editor implements ports.AdaptersModuleEditor by editing
+// Editor implements ports.DependencyInjectionEditor by editing
 // <root>/internal/platform/di/root.go using AST and goimports.
 // All operations are idempotent and tolerate missing files.
 
@@ -145,4 +145,4 @@ func (e *Editor) ensureInFile(filePath, alias, importPath, optionExpr string) er
 	return os.WriteFile(filePath, processed, 0o644)
 }
 
-var _ ports.AdaptersModuleEditor = (*Editor)(nil)
+var _ ports.DependencyInjectionEditor = (*Editor)(nil)
