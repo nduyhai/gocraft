@@ -1,0 +1,106 @@
+package grpcserver
+
+import (
+	"context"
+	"log/slog"
+	"net"
+	"os"
+	"time"
+
+	"github.com/spf13/viper"
+	"go.uber.org/fx"
+	"google.golang.org/grpc"
+	"google.golang.org/grpc/health"
+	healthpb "google.golang.org/grpc/health/grpc_health_v1"
+	"google.golang.org/grpc/reflection"
+)
+
+// grpcConfig holds minimal server configuration.
+// server.grpc.addr: address to listen on (default ":9090").
+// server.grpc.reflection: enable grpc reflection service (default true).
+// You can override addr with GRPC_PORT env (":<port>").
+type grpcConfig struct {
+	Addr        string `mapstructure:"server.grpc.addr"`
+	Reflection  bool   `mapstructure:"server.grpc.reflection"`
+}
+
+func loadGRPCConfig() *grpcConfig {
+	addr := ":9090"
+	if p := os.Getenv("GRPC_PORT"); p != "" {
+		addr = ":" + p
+	}
+	v := viper.New()
+	v.SetConfigName("config")
+	v.SetConfigType("yaml")
+	v.AddConfigPath("config")
+	_ = v.ReadInConfig()
+	if v.IsSet("server.grpc.addr") {
+		addr = v.GetString("server.grpc.addr")
+	}
+	reflection := true
+	if v.IsSet("server.grpc.reflection") {
+		reflection = v.GetBool("server.grpc.reflection")
+	}
+	return &grpcConfig{Addr: addr, Reflection: reflection}
+}
+
+// newGRPCServer builds a *grpc.Server and registers default services (health, optional reflection).
+func newGRPCServer(cfg *grpcConfig, log *slog.Logger) *grpc.Server {
+	// You could extend here with server options read from config.
+	srv := grpc.NewServer()
+	// Health service
+	hs := health.NewServer()
+	healthpb.RegisterHealthServer(srv, hs)
+	// Reflection for tooling
+	if cfg.Reflection {
+		reflection.Register(srv)
+	}
+	log.Info("grpc server configured", "addr", cfg.Addr, "reflection", cfg.Reflection)
+	return srv
+}
+
+// startGRPCServer registers lifecycle hooks to start/stop gRPC server.
+func startGRPCServer(lc fx.Lifecycle, log *slog.Logger, cfg *grpcConfig, srv *grpc.Server) {
+	lc.Append(fx.Hook{
+		OnStart: func(ctx context.Context) error {
+			lis, err := net.Listen("tcp", cfg.Addr)
+			if err != nil {
+				return err
+			}
+			go func() {
+				if err := srv.Serve(lis); err != nil {
+					log.Error("grpc server error", "err", err)
+				}
+			}()
+			log.Info("grpc server started", "addr", cfg.Addr)
+			return nil
+		},
+		OnStop: func(ctx context.Context) error {
+			ch := make(chan struct{})
+			go func() {
+				srv.GracefulStop()
+				close(ch)
+			}()
+			select {
+			case <-ch:
+				log.Info("grpc server stopped")
+				return nil
+			case <-time.After(5 * time.Second):
+				log.Info("grpc server force stop")
+				srv.Stop()
+				return nil
+			}
+		},
+	})
+}
+
+// Module wires the gRPC server components.
+func Module() fx.Option {
+	return fx.Options(
+		fx.Provide(
+			loadGRPCConfig,
+			newGRPCServer,
+		),
+		fx.Invoke(startGRPCServer),
+	)
+}

@@ -13,19 +13,31 @@ go install github.com/nduyhai/gocraft/cmd/gocraft@latest
 
 ## Usage
 
-```bash
+### create a simple project
+
+```bash 
 gocraft new myapp -m github.com/you/myapp
 
-gocraft new myapp -m github.com/you/myapp --with http:gin --with feature:makefile --with feature:gitignore --with feature:dockerfile
+```
 
+### Create a http project
+
+wit Chi
+```bash
+gocraft new myapp -m github.com/you/myapp --with http:gin --with feature:makefile --with feature:gitignore --with feature:dockerfile
+```
+
+with Gin
+```bash
 gocraft new myapp -m github.com/you/myapp --with http:chi --with feature:makefile --with feature:gitignore --with feature:dockerfile
 ```
 
-This generates:
+### Create a grpc project
 
-- go.mod (module set to github.com/you/myapp)
-- cmd/api/main.go
-- README.md
+```bash
+gocraft new myapp -m github.com/you/myapp --with grpc:server
+
+```
 
 Then optionally initialize git and tidy dependencies automatically.
 
