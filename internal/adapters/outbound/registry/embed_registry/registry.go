@@ -70,6 +70,10 @@ func (r *Registry) Apply(ctx ports.Ctx, names ...string) error {
 		if err := m.Apply(ctx); err != nil {
 			return fmt.Errorf("apply %s: %w", name, err)
 		}
+		// After applying a module, ensure its default config is present.
+		if cfg := ctx.Config(); cfg != nil {
+			_ = cfg.EnsureDefaultsFor(name)
+		}
 	}
 	return nil
 }

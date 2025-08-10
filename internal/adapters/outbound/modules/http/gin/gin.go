@@ -6,6 +6,7 @@ import (
 	"strings"
 
 	"github.com/nduyhai/gocraft/internal/core/ports"
+	"gopkg.in/yaml.v3"
 )
 
 // Module implements ports.Module for adding a Gin HTTP server into an existing or new project.
@@ -91,4 +92,23 @@ func (Module) Apply(ctx ports.Ctx) error {
 		}
 	}
 	return nil
+}
+
+// Defaults implements ports.Module.Defaults to provide default configuration.
+func (Module) Defaults() map[string]any {
+	// Attempt to load from embedded defaults template
+	if b, err := fs.ReadFile(TemplatesFS, "templates/config/defaults.yml.tmpl"); err == nil {
+		var m map[string]any
+		if yaml.Unmarshal(b, &m) == nil && m != nil {
+			return m
+		}
+	}
+	// Fallback to hardcoded defaults
+	return map[string]any{
+		"server": map[string]any{
+			"http": map[string]any{
+				"addr": ":8080",
+			},
+		},
+	}
 }

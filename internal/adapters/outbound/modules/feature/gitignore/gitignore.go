@@ -67,3 +67,6 @@ func (Module) Apply(ctx ports.Ctx) error {
 	}
 	return nil
 }
+
+// Defaults returns no defaults for this feature module.
+func (Module) Defaults() map[string]any { return nil }

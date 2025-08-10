@@ -8,6 +8,7 @@ import (
 	"path/filepath"
 	"strings"
 
+	configfileeditor "github.com/nduyhai/gocraft/internal/adapters/outbound/config/fileeditor"
 	"github.com/nduyhai/gocraft/internal/adapters/outbound/context/contextimpl"
 	amfileeditor "github.com/nduyhai/gocraft/internal/adapters/outbound/di/fileeditor"
 	"github.com/nduyhai/gocraft/internal/adapters/outbound/fs/oswriter"
@@ -43,9 +44,10 @@ func newAddCmd(reg ports.Registry) *cobra.Command {
 			writer := oswriter.New()
 			gomod := gomodfileeditor.New(cwd)
 			adaptersEditor := amfileeditor.New(cwd)
+			cfgEditor := configfileeditor.New(cwd)
 
 			// Build context
-			ctx := contextimpl.New(cwd, writer, renderer, gomod, adaptersEditor, map[string]any{
+			ctx := contextimpl.New(cwd, writer, renderer, gomod, adaptersEditor, cfgEditor, map[string]any{
 				"Name":   name,
 				"Module": modulePath,
 			})

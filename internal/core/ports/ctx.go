@@ -12,4 +12,5 @@ type Ctx interface {
 
 	GoMod() GoModEditor
 	AdaptersModule() DependencyInjectionEditor
+	Config() ConfigEditor
 }
