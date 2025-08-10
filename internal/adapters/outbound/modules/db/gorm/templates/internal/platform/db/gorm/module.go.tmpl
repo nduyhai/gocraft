@@ -6,9 +6,14 @@ import (
 
 	"github.com/spf13/viper"
 	"go.uber.org/fx"
-	"gorm.io/driver/mysql"
+	{{- $g := index . "gorm" -}}
+	{{- if and $g (or (eq (lower (index $g "driver")) "postgres") (eq (lower (index $g "driver")) "pg") (eq (lower (index $g "driver")) "postgresql") (eq (lower (index $g "driver")) "postgre")) }}
 	"gorm.io/driver/postgres"
+	{{- else if and $g (eq (lower (index $g "driver")) "mysql") }}
+	"gorm.io/driver/mysql"
+	{{- else }}
 	"gorm.io/driver/sqlite"
+	{{- end }}
 	"gorm.io/gorm"
 	"gorm.io/gorm/logger"
 )
@@ -38,7 +43,14 @@ func Module() fx.Option {
 
 		driver := v.GetString("gorm.driver")
 		if driver == "" {
+			// default to the selected driver at generation time
+			{{- if and $g (or (eq (lower (index $g "driver")) "postgres") (eq (lower (index $g "driver")) "pg") (eq (lower (index $g "driver")) "postgresql") (eq (lower (index $g "driver")) "postgre")) }}
+			driver = "postgres"
+			{{- else if and $g (eq (lower (index $g "driver")) "mysql") }}
+			driver = "mysql"
+			{{- else }}
 			driver = "sqlite"
+			{{- end }}
 		}
 		dsn := v.GetString("gorm.dsn")
 
@@ -61,19 +73,25 @@ func Module() fx.Option {
 			db  *gorm.DB
 			err error
 		)
-		switch driver {
-		case "postgres", "pg", "postgre":
-			db, err = gorm.Open(postgres.Open(dsn), gcfg)
-		case "mysql":
-			db, err = gorm.Open(mysql.Open(dsn), gcfg)
-		case "sqlite":
-			fallthrough
-		default:
-			if dsn == "" {
-				dsn = "file:app.db?_pragma=busy_timeout=5000&_pragma=journal_mode=WAL"
-			}
-			db, err = gorm.Open(sqlite.Open(dsn), gcfg)
+		{{- if and $g (or (eq (lower (index $g "driver")) "postgres") (eq (lower (index $g "driver")) "pg") (eq (lower (index $g "driver")) "postgresql") (eq (lower (index $g "driver")) "postgre")) }}
+		if dsn == "" {
+			// example DSN for postgres
+			dsn = "host=localhost port=5432 user=postgres password=postgres dbname=appdb sslmode=disable"
 		}
+		db, err = gorm.Open(postgres.Open(dsn), gcfg)
+		{{- else if and $g (eq (lower (index $g "driver")) "mysql") }}
+		if dsn == "" {
+			// example DSN for mysql
+			dsn = "user:password@tcp(localhost:3306)/appdb?parseTime=true&loc=Local"
+		}
+		db, err = gorm.Open(mysql.Open(dsn), gcfg)
+		{{- else }}
+		if dsn == "" {
+			// example DSN for sqlite
+			dsn = "file:app.db?_pragma=busy_timeout=5000&_pragma=journal_mode=WAL"
+		}
+		db, err = gorm.Open(sqlite.Open(dsn), gcfg)
+		{{- end }}
 		if err != nil {
 			return nil, err
 		}

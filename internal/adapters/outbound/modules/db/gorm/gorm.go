@@ -78,11 +78,16 @@ func (Module) Apply(ctx ports.Ctx) error {
 		if d.IsDir() {
 			return nil
 		}
+		clean := strings.TrimPrefix(path, "./")
+		// Do not render defaults template to disk; it's used only for merging into config.yml
+		if clean == "config/defaults.yml.tmpl" {
+			return nil
+		}
 		b, err := fs.ReadFile(sub, path)
 		if err != nil {
 			return err
 		}
-		tfiles = append(tfiles, ports.TmplFile{Path: path, Content: string(b)})
+		tfiles = append(tfiles, ports.TmplFile{Path: clean, Content: string(b)})
 		return nil
 	})
 	if err != nil {
@@ -179,7 +184,18 @@ func ensureGormDriverInConfig(root, driver string) error {
 	if current == nil {
 		current = make(map[string]any)
 	}
+	// Set desired driver
 	setPath(current, []string{"gorm", "driver"}, driver)
+	// Adjust DSN if empty or incompatible with selected driver
+	var curDSN string
+	if g, ok := current["gorm"].(map[string]any); ok {
+		if v, ok := g["dsn"].(string); ok {
+			curDSN = strings.TrimSpace(v)
+		}
+	}
+	if curDSN == "" || driverFromDSN(curDSN) != strings.ToLower(strings.TrimSpace(driver)) {
+		setPath(current, []string{"gorm", "dsn"}, defaultDSNFor(driver))
+	}
 	out, err := yaml.Marshal(current)
 	if err != nil {
 		return err
@@ -207,6 +223,21 @@ func setPath(m map[string]any, path []string, value any) {
 			cur[p] = nm
 		}
 		cur = nm
+	}
+}
+
+// defaultDSNFor returns a sensible DSN example for the given driver.
+// Supported drivers: postgres, mysql, sqlite. Falls back to sqlite.
+func defaultDSNFor(driver string) string {
+	switch strings.ToLower(strings.TrimSpace(driver)) {
+	case "postgres", "pg", "postgre", "postgresql":
+		// keyword-style DSN commonly used with lib/pq and pgx
+		return "host=localhost port=5432 user=postgres password=postgres dbname=appdb sslmode=disable"
+	case "mysql":
+		// classic DSN used by go-sql-driver/mysql
+		return "user:password@tcp(localhost:3306)/appdb?parseTime=true&loc=Local"
+	default: // sqlite
+		return "file:app.db?_pragma=busy_timeout=5000&_pragma=journal_mode=WAL"
 	}
 }
 
