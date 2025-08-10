@@ -5,12 +5,6 @@ import (
 	"path/filepath"
 	"strings"
 
-	configfileeditor "github.com/nduyhai/gocraft/internal/adapters/outbound/config/fileeditor"
-	"github.com/nduyhai/gocraft/internal/adapters/outbound/context/contextimpl"
-	amfileeditor "github.com/nduyhai/gocraft/internal/adapters/outbound/di/fileeditor"
-	"github.com/nduyhai/gocraft/internal/adapters/outbound/fs/oswriter"
-	gomodfileeditor "github.com/nduyhai/gocraft/internal/adapters/outbound/gomod/fileeditor"
-	"github.com/nduyhai/gocraft/internal/adapters/outbound/rendering/texttmpl"
 	"github.com/nduyhai/gocraft/internal/core/ports"
 	"github.com/nduyhai/gocraft/internal/core/usecase"
 	"github.com/spf13/cobra"
@@ -33,24 +27,8 @@ func newNewCmd(reg ports.Registry) *cobra.Command {
 			}
 			target := filepath.Join(".", name)
 
-			// Prepare outbound collaborators
-			renderer := texttmpl.New()
-			writer := oswriter.New()
-
-			// Build module context
-			// Build GoMod editor bound to target directory
-			gomod := gomodfileeditor.New(target)
-			adaptersEditor := amfileeditor.New(target)
-			cfgEditor := configfileeditor.New(target)
-			ctx := contextimpl.New(
-				target,
-				writer,
-				renderer,
-				gomod,
-				adaptersEditor,
-				cfgEditor,
-				map[string]any{"Name": name, "Module": module},
-			)
+			// Build module context with common collaborators
+			ctx := newCtx(target, name, module)
 
 			// Use usecase to apply module(s) with injected registry
 			uc := usecase.ApplyModules{Registry: reg}

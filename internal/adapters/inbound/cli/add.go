@@ -8,12 +8,6 @@ import (
 	"path/filepath"
 	"strings"
 
-	configfileeditor "github.com/nduyhai/gocraft/internal/adapters/outbound/config/fileeditor"
-	"github.com/nduyhai/gocraft/internal/adapters/outbound/context/contextimpl"
-	amfileeditor "github.com/nduyhai/gocraft/internal/adapters/outbound/di/fileeditor"
-	"github.com/nduyhai/gocraft/internal/adapters/outbound/fs/oswriter"
-	gomodfileeditor "github.com/nduyhai/gocraft/internal/adapters/outbound/gomod/fileeditor"
-	"github.com/nduyhai/gocraft/internal/adapters/outbound/rendering/texttmpl"
 	"github.com/nduyhai/gocraft/internal/core/ports"
 	"github.com/nduyhai/gocraft/internal/core/usecase"
 	"github.com/spf13/cobra"
@@ -39,18 +33,8 @@ func newAddCmd(reg ports.Registry) *cobra.Command {
 				modulePath = fmt.Sprintf("github.com/you/%s", name)
 			}
 
-			// Outbound collaborators
-			renderer := texttmpl.New()
-			writer := oswriter.New()
-			gomod := gomodfileeditor.New(cwd)
-			adaptersEditor := amfileeditor.New(cwd)
-			cfgEditor := configfileeditor.New(cwd)
-
-			// Build context
-			ctx := contextimpl.New(cwd, writer, renderer, gomod, adaptersEditor, cfgEditor, map[string]any{
-				"Name":   name,
-				"Module": modulePath,
-			})
+			// Build context with common collaborators
+			ctx := newCtx(cwd, name, modulePath)
 
 			// Use usecase to apply modules with injected registry
 			uc := usecase.ApplyModules{Registry: reg}
@@ -72,14 +56,14 @@ func readModulePath(goModPath string) (string, error) {
 		return "", err
 	}
 	defer f.Close()
-	Scanner := bufio.NewScanner(f)
-	for Scanner.Scan() {
-		line := strings.TrimSpace(Scanner.Text())
+	scanner := bufio.NewScanner(f)
+	for scanner.Scan() {
+		line := strings.TrimSpace(scanner.Text())
 		if strings.HasPrefix(line, "module ") {
 			return strings.TrimSpace(strings.TrimPrefix(line, "module ")), nil
 		}
 	}
-	if err := Scanner.Err(); err != nil {
+	if err := scanner.Err(); err != nil {
 		return "", err
 	}
 	return "", errors.New("module path not found in go.mod")
