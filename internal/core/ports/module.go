@@ -11,4 +11,8 @@ type Module interface {
 	Conflicts() []string
 	Applies(ctx Ctx) bool
 	Apply(ctx Ctx) error
+
+	// Defaults returns this module's default configuration as a nested map.
+	// It should be safe to merge into existing config, setting only missing keys.
+	Defaults() map[string]any
 }

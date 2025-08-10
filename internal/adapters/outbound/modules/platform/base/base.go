@@ -72,3 +72,6 @@ func (Module) Apply(ctx ports.Ctx) error {
 	}
 	return nil
 }
+
+// Defaults returns no extra defaults for platform:base (config template already includes baseline settings).
+func (Module) Defaults() map[string]any { return nil }
