@@ -5,7 +5,7 @@ go 1.24.1
 require (
 	github.com/spf13/cobra v1.9.1
 	go.uber.org/fx v1.24.0
-	golang.org/x/mod v0.27.0
+	golang.org/x/mod v0.28.0
 	golang.org/x/tools v0.36.0
 	gopkg.in/yaml.v3 v3.0.1
 )
